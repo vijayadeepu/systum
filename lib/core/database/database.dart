@@ -9,6 +9,8 @@ part 'database.g.dart';
 final class SystumDatabase extends _$SystumDatabase {
   SystumDatabase() : super(openDatabaseConnection());
 
+  SystumDatabase.test(super.executor);
+
   @override
   int get schemaVersion => 1;
 }
