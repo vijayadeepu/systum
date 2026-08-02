@@ -4,17 +4,17 @@
 
 ## Overview
 
-Systum is a long-term software engineering project focused on building a production-quality productivity platform rather than a simple to-do application.
+Systum is a long-term software engineering project focused on building a production-quality, offline-first productivity platform rather than a simple to-do application.
 
-The primary objective is to demonstrate modern Flutter engineering practices, thoughtful architecture, maintainable code, and professional development workflows.
+The primary objective is to demonstrate modern Flutter engineering practices, evolutionary architecture, maintainable code, and professional development workflows. Every architectural decision is introduced only when it provides measurable value, allowing the codebase to evolve naturally as the application grows.
 
-This repository emphasizes engineering quality over rapid feature development. Architectural decisions are introduced only when they solve real problems, allowing the project to evolve naturally as complexity increases.
+This repository prioritizes engineering quality, developer experience, and long-term maintainability over rapid feature development.
 
 ---
 
 ## Vision
 
-Systum aims to become an offline-first productivity operating system that helps users manage work, learning, and personal growth.
+Systum is designed to evolve into a modular productivity operating system that helps users manage work, learning, and personal growth.
 
 Planned capabilities include:
 
@@ -36,22 +36,23 @@ Planned capabilities include:
 * Plugin Architecture
 * Cross-platform Support
 
-These features will be implemented incrementally on top of a stable engineering foundation.
+Features will be introduced incrementally on top of a stable engineering foundation.
 
 ---
 
-## Project Goals
+## Engineering Goals
 
-This project prioritizes:
+This project emphasizes:
 
-* Clean architecture
-* Evolutionary software design
+* Evolutionary architecture
 * Offline-first development
-* Maintainable code
-* Reusable components
+* Maintainable and readable code
+* Feature-first organization
+* Modular design
 * Strong testing practices
 * Professional Git workflow
-* Comprehensive documentation
+* Continuous refactoring
+* Documentation that reflects reality
 * Production-quality engineering habits
 
 ---
@@ -64,31 +65,42 @@ This project prioritizes:
 | Dart              | Programming language                    |
 | Riverpod          | State management & dependency injection |
 | GoRouter          | Declarative navigation                  |
-| Drift             | Local SQLite database with type safety  |
+| Drift             | Type-safe SQLite persistence            |
+| SQLite            | Offline-first local database            |
 | SharedPreferences | Lightweight application settings        |
 | Logger            | Structured application logging          |
-| Git & GitHub      | Version control and collaboration       |
+| Git & GitHub      | Version control                         |
 | GitHub Actions    | Continuous Integration (planned)        |
 
 ---
 
 ## Current Status
 
-**Project Stage:** Foundation
+**Project Stage:** Engineering Foundation
 
-Completed:
+### Completed
 
 * Flutter project initialization
-* Dependency setup
-* Initial project structure
-* Development environment configuration
-
-In Progress:
-
+* Development environment setup
+* Feature-first project structure
 * Application bootstrap
-* Navigation infrastructure
-* Theme system
-* Database initialization
+* GoRouter-based navigation
+* Material 3 design system foundation
+* Drift database infrastructure
+* Riverpod dependency composition
+* Task database schema
+* Task repository implementation
+* Repository unit tests
+
+### Next Milestones
+
+* Riverpod task state management
+* Task list UI
+* Create/Edit task workflow
+* Search & filtering
+* Logging infrastructure
+* Global error handling
+* Settings infrastructure
 
 ---
 
@@ -97,6 +109,9 @@ In Progress:
 ```text
 lib/
 ├── app/
+│   ├── app.dart
+│   ├── bootstrap.dart
+│   └── router.dart
 ├── core/
 │   ├── constants/
 │   ├── database/
@@ -105,25 +120,29 @@ lib/
 │   ├── theme/
 │   └── utils/
 ├── features/
+│   ├── home/
+│   └── tasks/
 ├── shared/
 │   ├── extensions/
+│   ├── providers/
 │   └── widgets/
 └── main.dart
 ```
 
-The project follows a feature-first organization. Additional architectural layers will be introduced only when justified by increasing product complexity.
+The project follows a feature-first architecture. Additional architectural layers are introduced only when justified by increasing product complexity.
 
 ---
 
 ## Development Principles
 
-* Keep architecture simple until complexity requires change.
+* Build simple solutions before introducing abstractions.
 * Prefer composition over inheritance.
+* Keep responsibilities focused and explicit.
 * Favor readability over cleverness.
 * Minimize technical debt.
-* Add abstractions only when they solve real problems.
 * Keep features isolated and modular.
-* Build with long-term maintainability in mind.
+* Design for long-term maintainability.
+* Test meaningful behavior, not implementation details.
 
 ---
 
@@ -136,12 +155,22 @@ The project follows a feature-first organization. Additional architectural layer
 * Android SDK
 * Git
 
-### Installation
+### Clone the Repository
 
 ```bash
 git clone <repository-url>
 cd systum
+```
+
+### Install Dependencies
+
+```bash
 flutter pub get
+```
+
+### Run the Application
+
+```bash
 flutter run
 ```
 
@@ -152,31 +181,50 @@ dart analyze
 flutter test
 ```
 
-Both commands should complete successfully before contributing new code.
+Both commands should complete successfully before contributing changes.
 
 ---
 
 ## Roadmap
 
-* [x] Project initialization
+### Foundation
+
+* [x] Flutter project initialization
 * [x] Development environment setup
 * [x] Core dependencies
-* [ ] Application bootstrap
-* [ ] Navigation
-* [ ] Design system
-* [ ] Database layer
-* [ ] Task Management
+* [x] Application bootstrap
+* [x] Navigation infrastructure
+* [x] Design system foundation
+* [x] Drift database infrastructure
+* [x] Riverpod dependency composition
+* [x] Task schema
+* [x] Task repository
+* [x] Repository unit tests
+
+### Current Focus
+
+* [ ] Riverpod task state management
+* [ ] Task list UI
+* [ ] Create/Edit task flow
+* [ ] Search & filtering
+
+### Future
+
+* [ ] Habit tracking
 * [ ] Dashboard
 * [ ] Productivity modules
+* [ ] Notifications
 * [ ] Backup & Restore
+* [ ] Calendar integration
 * [ ] Cloud synchronization
 * [ ] AI assistant
+* [ ] Plugin architecture
 
 ---
 
 ## Engineering Philosophy
 
-This repository is intended to demonstrate engineering maturity rather than framework knowledge.
+Systum is intended to demonstrate engineering maturity rather than framework knowledge.
 
 Every architectural decision is evaluated against:
 
@@ -187,12 +235,18 @@ Every architectural decision is evaluated against:
 * Testability
 * Performance
 * Developer Experience
+* Portfolio value
 
-The project is developed incrementally with focused commits, continuous refactoring, and documentation that reflects the current implementation.
+The repository evolves through small, reviewable milestones with focused commits, continuous testing, and documentation that accurately reflects the current implementation.
+
+---
+
+## Contributing
+
+The project is currently under active development. Contribution guidelines will be added once the architecture stabilizes.
 
 ---
 
 ## License
 
 A project license will be added before the repository is made public.
-
