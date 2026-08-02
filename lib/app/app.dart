@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 
+import 'router.dart';
+
 class SystumApp extends StatelessWidget {
   const SystumApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return MaterialApp.router(
       title: 'Systum',
       debugShowCheckedModeBanner: false,
-      home: const Scaffold(body: Center(child: Text('Systum'))),
+      routerConfig: appRouter,
     );
   }
 }
