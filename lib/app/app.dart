@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../core/theme/app_theme.dart';
 import 'router.dart';
 
 class SystumApp extends StatelessWidget {
@@ -10,6 +11,7 @@ class SystumApp extends StatelessWidget {
     return MaterialApp.router(
       title: 'Systum',
       debugShowCheckedModeBanner: false,
+      theme: AppTheme.light,
       routerConfig: appRouter,
     );
   }

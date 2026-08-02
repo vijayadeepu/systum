@@ -6,9 +6,5 @@ import 'app.dart';
 void bootstrap() {
   WidgetsFlutterBinding.ensureInitialized();
 
-  runApp(
-    const ProviderScope(
-      child: SystumApp(),
-    ),
-  );
+  runApp(const ProviderScope(child: SystumApp()));
 }
