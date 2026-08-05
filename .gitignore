@@ -89,3 +89,4 @@ coverage/
 lcov.info
 
 firebase-debug.log
+.github
