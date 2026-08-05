@@ -71,9 +71,7 @@ class _CreateTaskDialogState extends State<CreateTaskDialog> {
             children: [
               TextFormField(
                 controller: _titleController,
-                decoration: const InputDecoration(
-                  labelText: 'Title',
-                ),
+                decoration: const InputDecoration(labelText: 'Title'),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
                     return 'Title is required';
@@ -84,9 +82,7 @@ class _CreateTaskDialogState extends State<CreateTaskDialog> {
               const SizedBox(height: AppSpacing.md),
               TextFormField(
                 controller: _descriptionController,
-                decoration: const InputDecoration(
-                  labelText: 'Description',
-                ),
+                decoration: const InputDecoration(labelText: 'Description'),
                 minLines: 2,
                 maxLines: 4,
               ),
@@ -129,10 +125,7 @@ class _CreateTaskDialogState extends State<CreateTaskDialog> {
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('Cancel'),
         ),
-        FilledButton(
-          onPressed: _submit,
-          child: const Text('Create'),
-        ),
+        FilledButton(onPressed: _submit, child: const Text('Create')),
       ],
     );
   }
