@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_spacing.dart';
+import '../models/task.dart';
 import '../providers/task_provider.dart';
+import '../widgets/create_task_dialog.dart';
 import '../widgets/task_tile.dart';
 
 class TaskListPage extends ConsumerWidget {
@@ -14,26 +16,45 @@ class TaskListPage extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Tasks')),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () async {
+          final task = await showDialog<Task>(
+            context: context,
+            builder: (_) => const CreateTaskDialog(),
+          );
+
+          if (task != null && context.mounted) {
+            await ref.read(taskProvider.notifier).addTask(task);
+          }
+        },
+        icon: const Icon(Icons.add_rounded),
+        label: const Text('Create task'),
+      ),
       body: tasksState.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stackTrace) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.md),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.error_outline_rounded, size: 48),
-                const SizedBox(height: AppSpacing.md),
-                const Text('Unable to load tasks'),
-                const SizedBox(height: AppSpacing.sm),
-                FilledButton(
-                  onPressed: () => ref.read(taskProvider.notifier).refresh(),
-                  child: const Text('Retry'),
-                ),
-              ],
+        error: (error, stackTrace) {
+          final message = error.toString();
+
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.error_outline_rounded, size: 48),
+                  const SizedBox(height: AppSpacing.md),
+                  Text(message, textAlign: TextAlign.center),
+                  const SizedBox(height: AppSpacing.sm),
+                  FilledButton.icon(
+                    onPressed: () => ref.read(taskProvider.notifier).refresh(),
+                    icon: const Icon(Icons.refresh_rounded),
+                    label: const Text('Retry'),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ),
+          );
+        },
         data: (tasks) {
           if (tasks.isEmpty) {
             return const Center(
@@ -46,7 +67,7 @@ class TaskListPage extends ConsumerWidget {
                     SizedBox(height: AppSpacing.md),
                     Text('No tasks yet'),
                     SizedBox(height: AppSpacing.xs),
-                    Text('Your tasks will appear here once created.'),
+                    Text('Create your first task to get started.'),
                   ],
                 ),
               ),
@@ -59,6 +80,7 @@ class TaskListPage extends ConsumerWidget {
             separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.xs),
             itemBuilder: (context, index) {
               final task = tasks[index];
+
               return TaskTile(task: task, onToggle: (_) {});
             },
           );
