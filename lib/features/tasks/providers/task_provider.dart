@@ -40,8 +40,12 @@ class TaskNotifier extends AsyncNotifier<List<TaskRow>> {
     return _mutate(() => _repository.delete(id));
   }
 
-  Future<void> markCompleted(String id) {
-    return _mutate(() => _repository.markCompleted(id));
+  Future<void> setCompleted(String id, bool completed) async {
+    final result = await AsyncValue.guard(() async {
+      await _repository.setCompleted(id, completed);
+      return _repository.getAll();
+    });
+    state = result;
   }
 
   Future<void> refresh() async {

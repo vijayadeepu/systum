@@ -37,9 +37,9 @@ class TaskRepository {
     )..where((tasks) => tasks.id.equals(id))).go();
   }
 
-  Future<void> markCompleted(String id) async {
+  Future<void> setCompleted(String id, bool completed) async {
     await (_database.update(_database.tasks)
           ..where((tasks) => tasks.id.equals(id)))
-        .write(const TasksCompanion(completed: Value(true)));
+        .write(TasksCompanion(completed: Value(completed)));
   }
 }

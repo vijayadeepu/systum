@@ -81,7 +81,28 @@ class TaskListPage extends ConsumerWidget {
             itemBuilder: (context, index) {
               final task = tasks[index];
 
-              return TaskTile(task: task, onToggle: (_) {});
+              return TaskTile(
+                task: task,
+                onToggle: (completed) async {
+                  if (completed == null) {
+                    return;
+                  }
+
+                  try {
+                    await ref
+                        .read(taskProvider.notifier)
+                        .setCompleted(task.id, completed);
+                  } catch (error) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Could not update task: $error'),
+                        ),
+                      );
+                    }
+                  }
+                },
+              );
             },
           );
         },

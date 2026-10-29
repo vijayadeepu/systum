@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:systum/core/database/database.dart';
 import 'package:systum/features/tasks/models/task.dart';
+import 'package:systum/features/tasks/providers/task_provider.dart';
 import 'package:systum/features/tasks/repository/task_repository.dart';
 import 'package:systum/features/tasks/screens/task_list_page.dart';
 import 'package:systum/shared/providers/database_provider.dart';
@@ -120,4 +121,96 @@ void main() {
       1,
     ]);
   });
+
+  testWidgets('completing a task persists and updates the checkbox', (
+    tester,
+  ) async {
+    final repository = TaskRepository(database);
+    await repository.insert(_task(id: 'complete-me'));
+    await pumpTaskList(tester);
+
+    await tester.tap(find.byType(Checkbox).first);
+    await tester.pumpAndSettle();
+
+    expect(tester.widget<Checkbox>(find.byType(Checkbox)).value, isTrue);
+    expect((await repository.getById('complete-me'))?.completed, isTrue);
+  });
+
+  testWidgets('reopening a task persists and updates the checkbox', (
+    tester,
+  ) async {
+    final repository = TaskRepository(database);
+    await repository.insert(_task(id: 'reopen-me', completed: true));
+    await pumpTaskList(tester);
+
+    await tester.tap(find.byType(Checkbox).first);
+    await tester.pumpAndSettle();
+
+    expect(tester.widget<Checkbox>(find.byType(Checkbox)).value, isFalse);
+    expect((await repository.getById('reopen-me'))?.completed, isFalse);
+  });
+
+  testWidgets('refresh retains the persisted completion state', (tester) async {
+    final repository = TaskRepository(database);
+    await repository.insert(_task(id: 'refresh-me'));
+    await pumpTaskList(tester);
+    await tester.tap(find.byType(Checkbox).first);
+    await tester.pumpAndSettle();
+
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(TaskListPage)),
+    );
+    await container.read(taskProvider.notifier).refresh();
+    await tester.pumpAndSettle();
+
+    expect(tester.widget<Checkbox>(find.byType(Checkbox)).value, isTrue);
+    expect((await repository.getById('refresh-me'))?.completed, isTrue);
+  });
+
+  testWidgets('completion write failure is surfaced as an error state', (
+    tester,
+  ) async {
+    final repository = _FailingTaskRepository(database);
+    await TaskRepository(database).insert(_task(id: 'failure-me'));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          databaseProvider.overrideWithValue(database),
+          taskRepositoryProvider.overrideWithValue(repository),
+        ],
+        child: const MaterialApp(home: TaskListPage()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(Checkbox).first);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(Checkbox), findsNothing);
+    expect(find.textContaining('simulated write failure'), findsOneWidget);
+    expect(
+      (await TaskRepository(database).getById('failure-me'))?.completed,
+      isFalse,
+    );
+  });
+}
+
+Task _task({required String id, bool completed = false}) {
+  final now = DateTime(2026, 8, 1, 8);
+  return Task(
+    id: id,
+    title: 'Task $id',
+    completed: completed,
+    createdAt: now,
+    updatedAt: now,
+  );
+}
+
+class _FailingTaskRepository extends TaskRepository {
+  _FailingTaskRepository(super._database);
+
+  @override
+  Future<void> setCompleted(String id, bool completed) async {
+    throw StateError('simulated write failure');
+  }
 }

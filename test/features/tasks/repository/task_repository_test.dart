@@ -125,14 +125,15 @@ void main() {
       expect(deletedTask, isNull);
     });
 
-    test('markCompleted sets completed to true', () async {
+    test('setCompleted persists both completion transitions', () async {
       final task = _buildTask(completed: false);
       await repository.insert(task);
 
-      await repository.markCompleted(task.id);
-      final completedTask = await repository.getById(task.id);
+      await repository.setCompleted(task.id, true);
+      expect((await repository.getById(task.id))?.completed, isTrue);
 
-      expect(completedTask?.completed, isTrue);
+      await repository.setCompleted(task.id, false);
+      expect((await repository.getById(task.id))?.completed, isFalse);
     });
   });
 }
