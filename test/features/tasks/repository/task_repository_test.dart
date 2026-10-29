@@ -105,6 +105,40 @@ void main() {
       expect(updatedTask?.title, 'Updated title');
     });
 
+    test(
+      'update persists editable fields and preserves task identity',
+      () async {
+        final task = _buildTask(
+          completed: true,
+          dueDate: DateTime(2026, 8, 2),
+          priority: 2,
+        );
+        await repository.insert(task);
+        final updatedAt = DateTime(2026, 8, 3);
+
+        await repository.update(
+          task.copyWith(
+            title: 'Updated title',
+            description: 'Updated description',
+            dueDate: DateTime(2026, 8, 4),
+            priority: 3,
+            updatedAt: updatedAt,
+          ),
+        );
+        final updatedTask = Task.fromRow((await repository.getById(task.id))!);
+
+        expect(updatedTask.id, task.id);
+        expect(updatedTask.createdAt, task.createdAt);
+        expect(updatedTask.completed, task.completed);
+        expect(updatedTask.category, task.category);
+        expect(updatedTask.title, 'Updated title');
+        expect(updatedTask.description, 'Updated description');
+        expect(updatedTask.dueDate, DateTime(2026, 8, 4));
+        expect(updatedTask.priority, 3);
+        expect(updatedTask.updatedAt, updatedAt);
+      },
+    );
+
     test('update persists a changed completion status', () async {
       final task = _buildTask(completed: false);
       await repository.insert(task);

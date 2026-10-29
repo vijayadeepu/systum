@@ -8,7 +8,9 @@ import '../../../core/theme/app_typography.dart';
 import '../models/task.dart';
 
 class CreateTaskDialog extends StatefulWidget {
-  const CreateTaskDialog({super.key});
+  const CreateTaskDialog({super.key, this.task});
+
+  final Task? task;
 
   @override
   State<CreateTaskDialog> createState() => _CreateTaskDialogState();
@@ -16,9 +18,24 @@ class CreateTaskDialog extends StatefulWidget {
 
 class _CreateTaskDialogState extends State<CreateTaskDialog> {
   final _formKey = GlobalKey<FormState>();
-  final _titleController = TextEditingController();
-  final _descriptionController = TextEditingController();
-  DateTime? _dueDate;
+  late final TextEditingController _titleController;
+  late final TextEditingController _descriptionController;
+  late DateTime? _dueDate;
+  late int _priority;
+
+  bool get _isEditing => widget.task != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final task = widget.task;
+    _titleController = TextEditingController(text: task?.title ?? '');
+    _descriptionController = TextEditingController(
+      text: task?.description ?? '',
+    );
+    _dueDate = task?.dueDate;
+    _priority = task?.priority ?? 2;
+  }
 
   @override
   void dispose() {
@@ -46,16 +63,28 @@ class _CreateTaskDialogState extends State<CreateTaskDialog> {
     }
 
     final now = DateTime.now();
-    final task = Task(
-      id: _generateTaskId(),
-      title: _titleController.text.trim(),
-      description: _descriptionController.text.trim().isEmpty
-          ? null
-          : _descriptionController.text.trim(),
-      createdAt: now,
-      updatedAt: now,
-      dueDate: _dueDate,
-    );
+    final title = _titleController.text.trim();
+    final description = _descriptionController.text.trim().isEmpty
+        ? null
+        : _descriptionController.text.trim();
+    final existingTask = widget.task;
+    final task = existingTask == null
+        ? Task(
+            id: _generateTaskId(),
+            title: title,
+            description: description,
+            createdAt: now,
+            updatedAt: now,
+            dueDate: _dueDate,
+            priority: _priority,
+          )
+        : existingTask.copyWith(
+            title: title,
+            description: description,
+            updatedAt: now,
+            dueDate: _dueDate,
+            priority: _priority,
+          );
 
     Navigator.of(context).pop(task);
   }
@@ -63,7 +92,7 @@ class _CreateTaskDialogState extends State<CreateTaskDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Create Task'),
+      title: Text(_isEditing ? 'Edit Task' : 'Create Task'),
       content: Form(
         key: _formKey,
         child: SingleChildScrollView(
@@ -92,31 +121,63 @@ class _CreateTaskDialogState extends State<CreateTaskDialog> {
               InkWell(
                 borderRadius: AppRadius.medium,
                 onTap: _pickDueDate,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.md,
-                    vertical: AppSpacing.sm,
-                  ),
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color: Theme.of(context).colorScheme.outline,
+                child: Semantics(
+                  button: true,
+                  label: _dueDate == null
+                      ? 'Choose due date'
+                      : 'Due date ${_formatDate(_dueDate!)}',
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md,
+                      vertical: AppSpacing.sm,
                     ),
-                    borderRadius: AppRadius.medium,
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          _dueDate == null
-                              ? 'Due date (optional)'
-                              : 'Due ${_dueDate!.year}-${_dueDate!.month.toString().padLeft(2, '0')}-${_dueDate!.day.toString().padLeft(2, '0')}',
-                          style: AppTypography.body,
-                        ),
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: Theme.of(context).colorScheme.outline,
                       ),
-                      const Icon(Icons.calendar_today_outlined),
-                    ],
+                      borderRadius: AppRadius.medium,
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            _dueDate == null
+                                ? 'Due date (optional)'
+                                : 'Due ${_formatDate(_dueDate!)}',
+                            style: AppTypography.body,
+                          ),
+                        ),
+                        if (_dueDate != null)
+                          IconButton(
+                            tooltip: 'Clear due date',
+                            onPressed: () => setState(() => _dueDate = null),
+                            icon: const Icon(Icons.clear_rounded),
+                          ),
+                        const Icon(Icons.calendar_today_outlined),
+                      ],
+                    ),
                   ),
                 ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              DropdownButtonFormField<int>(
+                initialValue: _priority,
+                decoration: const InputDecoration(labelText: 'Priority'),
+                items: [
+                  if (_priority < 1 || _priority > 3)
+                    DropdownMenuItem(
+                      value: _priority,
+                      child: const Text('Low'),
+                    ),
+                  const DropdownMenuItem(value: 1, child: Text('Low')),
+                  DropdownMenuItem(value: 2, child: Text('Medium')),
+                  DropdownMenuItem(value: 3, child: Text('High')),
+                ],
+                onChanged: (priority) {
+                  if (priority != null) {
+                    setState(() => _priority = priority);
+                  }
+                },
               ),
             ],
           ),
@@ -127,11 +188,17 @@ class _CreateTaskDialogState extends State<CreateTaskDialog> {
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('Cancel'),
         ),
-        FilledButton(onPressed: _submit, child: const Text('Create')),
+        FilledButton(
+          onPressed: _submit,
+          child: Text(_isEditing ? 'Save' : 'Create'),
+        ),
       ],
     );
   }
 }
+
+String _formatDate(DateTime date) =>
+    '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
 
 String _generateTaskId() {
   final random = Random.secure();

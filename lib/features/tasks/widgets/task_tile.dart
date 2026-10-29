@@ -7,10 +7,18 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
 
 class TaskTile extends StatelessWidget {
-  const TaskTile({super.key, required this.task, required this.onToggle});
+  const TaskTile({
+    super.key,
+    required this.task,
+    required this.onToggle,
+    required this.onEdit,
+    required this.onDelete,
+  });
 
   final TaskRow task;
   final ValueChanged<bool?> onToggle;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -64,6 +72,16 @@ class TaskTile extends StatelessWidget {
                   fontWeight: FontWeight.w600,
                 ),
               ),
+            ),
+            IconButton(
+              tooltip: 'Edit ${task.title}',
+              onPressed: onEdit,
+              icon: const Icon(Icons.edit_outlined),
+            ),
+            IconButton(
+              tooltip: 'Delete ${task.title}',
+              onPressed: onDelete,
+              icon: const Icon(Icons.delete_outline),
             ),
           ],
         ),

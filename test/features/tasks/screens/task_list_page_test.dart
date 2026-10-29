@@ -167,7 +167,7 @@ void main() {
     expect((await repository.getById('refresh-me'))?.completed, isTrue);
   });
 
-  testWidgets('completion write failure is surfaced as an error state', (
+  testWidgets('completion write failure is visible and retains the task', (
     tester,
   ) async {
     final repository = _FailingTaskRepository(database);
@@ -186,8 +186,9 @@ void main() {
     await tester.tap(find.byType(Checkbox).first);
     await tester.pumpAndSettle();
 
-    expect(find.byType(Checkbox), findsNothing);
-    expect(find.textContaining('simulated write failure'), findsOneWidget);
+    expect(find.byType(Checkbox), findsOneWidget);
+    expect(find.text('Task failure-me'), findsOneWidget);
+    expect(find.textContaining('Could not update task'), findsOneWidget);
     expect(
       (await TaskRepository(database).getById('failure-me'))?.completed,
       isFalse,

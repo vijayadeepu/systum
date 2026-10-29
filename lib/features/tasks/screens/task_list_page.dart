@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/database/database.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../models/task.dart';
 import '../providers/task_provider.dart';
@@ -24,7 +25,13 @@ class TaskListPage extends ConsumerWidget {
           );
 
           if (task != null && context.mounted) {
-            await ref.read(taskProvider.notifier).addTask(task);
+            try {
+              await ref.read(taskProvider.notifier).addTask(task);
+            } catch (error) {
+              if (context.mounted) {
+                _showMutationError(context, 'Could not create task', error);
+              }
+            }
           }
         },
         icon: const Icon(Icons.add_rounded),
@@ -83,6 +90,8 @@ class TaskListPage extends ConsumerWidget {
 
               return TaskTile(
                 task: task,
+                onEdit: () => _editTask(context, ref, task),
+                onDelete: () => _deleteTask(context, ref, task),
                 onToggle: (completed) async {
                   if (completed == null) {
                     return;
@@ -94,10 +103,10 @@ class TaskListPage extends ConsumerWidget {
                         .setCompleted(task.id, completed);
                   } catch (error) {
                     if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Could not update task: $error'),
-                        ),
+                      _showMutationError(
+                        context,
+                        'Could not update task',
+                        error,
                       );
                     }
                   }
@@ -108,5 +117,73 @@ class TaskListPage extends ConsumerWidget {
         },
       ),
     );
+  }
+
+  Future<void> _editTask(
+    BuildContext context,
+    WidgetRef ref,
+    TaskRow taskRow,
+  ) async {
+    final task = await showDialog<Task>(
+      context: context,
+      builder: (_) => CreateTaskDialog(task: Task.fromRow(taskRow)),
+    );
+
+    if (task == null || !context.mounted) {
+      return;
+    }
+
+    try {
+      await ref.read(taskProvider.notifier).updateTask(task);
+    } catch (error) {
+      if (context.mounted) {
+        _showMutationError(context, 'Could not edit task', error);
+      }
+    }
+  }
+
+  Future<void> _deleteTask(
+    BuildContext context,
+    WidgetRef ref,
+    TaskRow task,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete task?'),
+        content: Text('Delete "${task.title}"? This cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !context.mounted) {
+      return;
+    }
+
+    try {
+      await ref.read(taskProvider.notifier).deleteTask(task.id);
+    } catch (error) {
+      if (context.mounted) {
+        _showMutationError(context, 'Could not delete task', error);
+      }
+    }
+  }
+
+  void _showMutationError(BuildContext context, String message, Object error) {
+    if (!context.mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('$message: $error')));
   }
 }

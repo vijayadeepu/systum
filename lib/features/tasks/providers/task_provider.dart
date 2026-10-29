@@ -41,11 +41,7 @@ class TaskNotifier extends AsyncNotifier<List<TaskRow>> {
   }
 
   Future<void> setCompleted(String id, bool completed) async {
-    final result = await AsyncValue.guard(() async {
-      await _repository.setCompleted(id, completed);
-      return _repository.getAll();
-    });
-    state = result;
+    await _mutate(() => _repository.setCompleted(id, completed));
   }
 
   Future<void> refresh() async {
@@ -54,10 +50,11 @@ class TaskNotifier extends AsyncNotifier<List<TaskRow>> {
   }
 
   Future<void> _mutate(Future<void> Function() action) async {
-    state = const AsyncLoading<List<TaskRow>>();
-    state = await AsyncValue.guard(() async {
+    final result = await AsyncValue.guard(() async {
       await action();
       return _repository.getAll();
     });
+
+    state = result;
   }
 }
