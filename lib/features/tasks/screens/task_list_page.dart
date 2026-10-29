@@ -182,8 +182,14 @@ class TaskListPage extends ConsumerWidget {
     if (!context.mounted) {
       return;
     }
+    final content = switch (error) {
+      TaskMutationReloadException(:final cause) =>
+        'Task change succeeded, but the task list could not be refreshed: '
+            '$cause',
+      _ => '$message: $error',
+    };
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(SnackBar(content: Text('$message: $error')));
+    ).showSnackBar(SnackBar(content: Text(content)));
   }
 }

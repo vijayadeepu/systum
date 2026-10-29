@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -226,6 +228,121 @@ void main() {
       isNotNull,
     );
   });
+
+  test(
+    'write failure keeps loaded state while the mutation is pending',
+    () async {
+      final repository = _PendingMutationTaskRepository(database);
+      final original = _task(id: 'pending-mutation');
+      await TaskRepository(database).insert(original);
+      final container = ProviderContainer(
+        overrides: [
+          databaseProvider.overrideWithValue(database),
+          taskRepositoryProvider.overrideWithValue(repository),
+        ],
+      );
+      addTearDown(container.dispose);
+      await container.read(taskProvider.future);
+
+      final mutation = container
+          .read(taskProvider.notifier)
+          .updateTask(_task(id: original.id, title: 'Updated'));
+
+      expect(container.read(taskProvider), isA<AsyncData<List<TaskRow>>>());
+      expect(
+        container.read(taskProvider).requireValue.single.title,
+        original.title,
+      );
+
+      repository.updateCompleter.completeError(
+        StateError('simulated write failure'),
+      );
+      await expectLater(mutation, throwsA(isA<StateError>()));
+
+      expect(container.read(taskProvider), isA<AsyncData<List<TaskRow>>>());
+      expect(
+        container.read(taskProvider).requireValue.single.title,
+        original.title,
+      );
+      expect(
+        (await TaskRepository(database).getById(original.id))?.title,
+        original.title,
+      );
+    },
+  );
+
+  test('older mutation reload cannot overwrite a newer mutation', () async {
+    final repository = _StaleReloadTaskRepository(database);
+    final original = _task(id: 'stale-reload');
+    await TaskRepository(database).insert(original);
+    final container = ProviderContainer(
+      overrides: [
+        databaseProvider.overrideWithValue(database),
+        taskRepositoryProvider.overrideWithValue(repository),
+      ],
+    );
+    addTearDown(container.dispose);
+    await container.read(taskProvider.future);
+    final notifier = container.read(taskProvider.notifier);
+
+    final olderMutation = notifier.updateTask(
+      _task(id: original.id, title: 'Older result'),
+    );
+    await repository.staleReloadCaptured.future;
+
+    await notifier.updateTask(_task(id: original.id, title: 'Latest result'));
+    expect(
+      container.read(taskProvider).requireValue.single.title,
+      'Latest result',
+    );
+
+    repository.releaseStaleReload.complete();
+    await olderMutation;
+
+    expect(
+      container.read(taskProvider).requireValue.single.title,
+      'Latest result',
+    );
+    expect(
+      (await TaskRepository(database).getById(original.id))?.title,
+      'Latest result',
+    );
+  });
+
+  testWidgets('successful write with failed reload is reported distinctly', (
+    tester,
+  ) async {
+    final repository = _FailingReloadTaskRepository(database);
+    final original = _task(id: 'reload-failure');
+    await TaskRepository(database).insert(original);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          databaseProvider.overrideWithValue(database),
+          taskRepositoryProvider.overrideWithValue(repository),
+        ],
+        child: const MaterialApp(home: TaskListPage()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Edit ${original.title}'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextFormField).first, 'Updated');
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.textContaining('Task change succeeded, but the task list'),
+      findsOneWidget,
+    );
+    expect(find.textContaining('Could not edit task'), findsNothing);
+    expect(find.text(original.title), findsOneWidget);
+    expect(
+      (await TaskRepository(database).getById(original.id))?.title,
+      'Updated',
+    );
+  });
 }
 
 Task _task({
@@ -260,5 +377,54 @@ class _FailingMutationTaskRepository extends TaskRepository {
   @override
   Future<void> delete(String id) async {
     throw StateError('simulated delete failure');
+  }
+}
+
+class _PendingMutationTaskRepository extends TaskRepository {
+  _PendingMutationTaskRepository(super._database);
+
+  final updateCompleter = Completer<void>();
+
+  @override
+  Future<void> update(Task task) => updateCompleter.future;
+}
+
+class _StaleReloadTaskRepository extends TaskRepository {
+  _StaleReloadTaskRepository(super._database);
+
+  final staleReloadCaptured = Completer<void>();
+  final releaseStaleReload = Completer<void>();
+  int _getAllCalls = 0;
+
+  @override
+  Future<List<TaskRow>> getAll() async {
+    final call = ++_getAllCalls;
+    final tasks = await super.getAll();
+    if (call == 2) {
+      staleReloadCaptured.complete();
+      await releaseStaleReload.future;
+    }
+    return tasks;
+  }
+}
+
+class _FailingReloadTaskRepository extends TaskRepository {
+  _FailingReloadTaskRepository(super._database);
+
+  bool _failNextReload = false;
+
+  @override
+  Future<void> update(Task task) async {
+    await super.update(task);
+    _failNextReload = true;
+  }
+
+  @override
+  Future<List<TaskRow>> getAll() async {
+    if (_failNextReload) {
+      _failNextReload = false;
+      throw StateError('simulated reload failure');
+    }
+    return super.getAll();
   }
 }

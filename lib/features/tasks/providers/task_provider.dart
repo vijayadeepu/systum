@@ -18,6 +18,7 @@ final taskProvider = AsyncNotifierProvider<TaskNotifier, List<TaskRow>>(
 
 class TaskNotifier extends AsyncNotifier<List<TaskRow>> {
   late final TaskRepository _repository = ref.read(taskRepositoryProvider);
+  int _stateRevision = 0;
 
   @override
   FutureOr<List<TaskRow>> build() {
@@ -45,16 +46,31 @@ class TaskNotifier extends AsyncNotifier<List<TaskRow>> {
   }
 
   Future<void> refresh() async {
+    final revision = ++_stateRevision;
     state = const AsyncLoading<List<TaskRow>>();
-    state = await AsyncValue.guard(_repository.getAll);
+    final result = await AsyncValue.guard(_repository.getAll);
+    if (revision == _stateRevision) {
+      state = result;
+    }
   }
 
   Future<void> _mutate(Future<void> Function() action) async {
-    final result = await AsyncValue.guard(() async {
-      await action();
-      return _repository.getAll();
-    });
+    await action();
+    final revision = ++_stateRevision;
 
-    state = result;
+    try {
+      final tasks = await _repository.getAll();
+      if (revision == _stateRevision) {
+        state = AsyncData(tasks);
+      }
+    } catch (error, stackTrace) {
+      Error.throwWithStackTrace(TaskMutationReloadException(error), stackTrace);
+    }
   }
+}
+
+class TaskMutationReloadException implements Exception {
+  const TaskMutationReloadException(this.cause);
+
+  final Object cause;
 }
