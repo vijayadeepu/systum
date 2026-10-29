@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:systum/core/database/database.dart';
@@ -169,7 +170,311 @@ void main() {
       await repository.setCompleted(task.id, false);
       expect((await repository.getById(task.id))?.completed, isFalse);
     });
+
+    test(
+      'assignToGoal links a standalone task without changing its fields',
+      () async {
+        final goal = await _insertGoal(database, id: 'goal-1');
+        final task = _buildTask(
+          id: 'assigned-task',
+          title: 'Assigned task',
+          description: 'Keep every field',
+          completed: true,
+          createdAt: DateTime(2026, 8, 1, 8),
+          updatedAt: DateTime(2026, 8, 2, 9),
+          dueDate: DateTime(2026, 8, 10),
+          priority: 4,
+          category: 'Work',
+        );
+        await repository.insert(task);
+
+        await repository.assignToGoal(task.id, goal.id);
+
+        final storedTask = (await repository.getById(task.id))!;
+        expect(storedTask.goalId, goal.id);
+        expect(storedTask.id, task.id);
+        expect(storedTask.title, task.title);
+        expect(storedTask.description, task.description);
+        expect(storedTask.completed, task.completed);
+        expect(storedTask.createdAt, task.createdAt);
+        expect(storedTask.updatedAt, task.updatedAt);
+        expect(storedTask.dueDate, task.dueDate);
+        expect(storedTask.priority, task.priority);
+        expect(storedTask.category, task.category);
+        expect(storedTask.parentTaskId, isNull);
+      },
+    );
+
+    test('removeFromGoal clears the goal without deleting the task', () async {
+      final goal = await _insertGoal(database, id: 'goal-1');
+      final task = _buildTask(dueDate: DateTime(2026, 8, 10), priority: 4);
+      await repository.insert(task);
+      await repository.assignToGoal(task.id, goal.id);
+
+      await repository.removeFromGoal(task.id);
+
+      final storedTask = await repository.getById(task.id);
+      expect(storedTask, isNotNull);
+      expect(storedTask?.goalId, isNull);
+      expect(storedTask?.parentTaskId, isNull);
+      expect(Task.fromRow(storedTask!), equals(task));
+      expect(await repository.getAll(), hasLength(1));
+    });
+
+    test('getByGoalId returns matching tasks in repository order', () async {
+      final firstGoal = await _insertGoal(database, id: 'goal-1');
+      final secondGoal = await _insertGoal(database, id: 'goal-2');
+      final emptyGoal = await _insertGoal(database, id: 'goal-3');
+      final tasks = [
+        _buildTask(
+          id: 'older-high-priority',
+          priority: 3,
+          createdAt: DateTime(2026, 8, 1, 9),
+        ),
+        _buildTask(
+          id: 'newer-high-priority',
+          priority: 3,
+          createdAt: DateTime(2026, 8, 1, 10),
+        ),
+        _buildTask(
+          id: 'lower-priority',
+          priority: 1,
+          createdAt: DateTime(2026, 8, 1, 11),
+        ),
+        _buildTask(
+          id: 'completed-task',
+          completed: true,
+          priority: 5,
+          createdAt: DateTime(2026, 8, 1, 12),
+        ),
+        _buildTask(id: 'other-goal-task'),
+        _buildTask(id: 'standalone-task'),
+      ];
+      for (final task in tasks) {
+        await repository.insert(task);
+      }
+      await repository.assignToGoal('older-high-priority', firstGoal.id);
+      await repository.assignToGoal('newer-high-priority', firstGoal.id);
+      await repository.assignToGoal('lower-priority', firstGoal.id);
+      await repository.assignToGoal('completed-task', firstGoal.id);
+      await repository.assignToGoal('other-goal-task', secondGoal.id);
+
+      final goalTasks = await repository.getByGoalId(firstGoal.id);
+
+      expect(goalTasks.map((task) => task.id).toList(), [
+        'newer-high-priority',
+        'older-high-priority',
+        'lower-priority',
+        'completed-task',
+      ]);
+      expect(await repository.getByGoalId(emptyGoal.id), isEmpty);
+      expect(await repository.getByGoalId('missing-goal'), isEmpty);
+      expect(await repository.getAll(), hasLength(tasks.length));
+    });
+
+    test(
+      'assignToGoal rejects a missing goal and keeps the old assignment',
+      () async {
+        final originalGoal = await _insertGoal(database, id: 'goal-1');
+        final task = _buildTask();
+        await repository.insert(task);
+        await repository.assignToGoal(task.id, originalGoal.id);
+
+        await expectLater(
+          repository.assignToGoal(task.id, 'missing-goal'),
+          throwsA(
+            isA<TaskRelationshipException>().having(
+              (error) => error.message,
+              'message',
+              contains('missing-goal'),
+            ),
+          ),
+        );
+
+        expect((await repository.getById(task.id))?.goalId, originalGoal.id);
+      },
+    );
+
+    test(
+      'assignToGoal rejects a missing task without creating a task',
+      () async {
+        final goal = await _insertGoal(database, id: 'goal-1');
+
+        await expectLater(
+          repository.assignToGoal('missing-task', goal.id),
+          throwsA(
+            isA<TaskRelationshipException>().having(
+              (error) => error.message,
+              'message',
+              contains('missing-task'),
+            ),
+          ),
+        );
+
+        expect(await repository.getAll(), isEmpty);
+      },
+    );
+
+    test('removeFromGoal rejects a missing task', () async {
+      await expectLater(
+        repository.removeFromGoal('missing-task'),
+        throwsA(
+          isA<TaskRelationshipException>().having(
+            (error) => error.message,
+            'message',
+            contains('missing-task'),
+          ),
+        ),
+      );
+
+      expect(await repository.getAll(), isEmpty);
+    });
+
+    test('assignToGoal rejects a subtask', () async {
+      final firstGoal = await _insertGoal(database, id: 'goal-1');
+      final secondGoal = await _insertGoal(database, id: 'goal-2');
+      await _insertTaskRow(database, id: 'parent-task', goalId: firstGoal.id);
+      await _insertTaskRow(
+        database,
+        id: 'child-task',
+        parentTaskId: 'parent-task',
+      );
+
+      await expectLater(
+        repository.assignToGoal('child-task', secondGoal.id),
+        throwsA(
+          isA<TaskRelationshipException>().having(
+            (error) => error.message,
+            'message',
+            contains('subtask'),
+          ),
+        ),
+      );
+
+      final child = (await repository.getById('child-task'))!;
+      expect(child.goalId, isNull);
+      expect(child.parentTaskId, 'parent-task');
+    });
+
+    test(
+      'editing and completing a task preserves its goal assignment',
+      () async {
+        final goal = await _insertGoal(database, id: 'goal-1');
+        final task = _buildTask();
+        await repository.insert(task);
+        await repository.assignToGoal(task.id, goal.id);
+
+        await repository.update(task.copyWith(title: 'Updated title'));
+        var storedTask = (await repository.getById(task.id))!;
+        expect(storedTask.goalId, goal.id);
+        expect(storedTask.title, 'Updated title');
+
+        await repository.setCompleted(task.id, true);
+        storedTask = (await repository.getById(task.id))!;
+        expect(storedTask.goalId, goal.id);
+        expect(storedTask.completed, isTrue);
+      },
+    );
+
+    test('standalone tasks remain usable without a goal', () async {
+      final task = _buildTask();
+      await repository.insert(task);
+
+      expect((await repository.getById(task.id))?.goalId, isNull);
+
+      await repository.update(task.copyWith(title: 'Edited standalone'));
+      await repository.setCompleted(task.id, true);
+      final editedTask = (await repository.getById(task.id))!;
+      expect(editedTask.goalId, isNull);
+      expect(editedTask.title, 'Edited standalone');
+      expect(editedTask.completed, isTrue);
+
+      await repository.delete(task.id);
+      expect(await repository.getById(task.id), isNull);
+    });
+
+    test('foreign keys reject invalid goal references', () async {
+      final task = _buildTask();
+      await repository.insert(task);
+
+      await expectLater(
+        database
+            .into(database.tasks)
+            .insert(
+              TasksCompanion.insert(
+                id: 'invalid-task',
+                title: 'Invalid task',
+                createdAt: DateTime(2026, 8, 1),
+                updatedAt: DateTime(2026, 8, 1),
+                goalId: const Value('missing-goal'),
+              ),
+            ),
+        throwsA(isA<SqliteException>()),
+      );
+      expect(await repository.getById('invalid-task'), isNull);
+
+      await expectLater(
+        database.customStatement(
+          "UPDATE tasks SET goal_id = 'missing-goal' WHERE id = '${task.id}'",
+        ),
+        throwsA(isA<SqliteException>()),
+      );
+      expect((await repository.getById(task.id))?.goalId, isNull);
+    });
+
+    test('foreign keys prevent deleting a referenced parent task', () async {
+      await _insertTaskRow(database, id: 'parent-task');
+      await _insertTaskRow(
+        database,
+        id: 'child-task',
+        parentTaskId: 'parent-task',
+      );
+
+      await expectLater(
+        repository.delete('parent-task'),
+        throwsA(isA<SqliteException>()),
+      );
+
+      expect(await repository.getById('parent-task'), isNotNull);
+      expect(await repository.getById('child-task'), isNotNull);
+    });
   });
+}
+
+Future<GoalRow> _insertGoal(
+  SystumDatabase database, {
+  String id = 'goal-1',
+}) async {
+  final now = DateTime(2026, 8, 1);
+  final goal = GoalRow(
+    id: id,
+    title: 'Goal $id',
+    createdAt: now,
+    updatedAt: now,
+  );
+  await database.into(database.goals).insert(goal.toCompanion(true));
+  return goal;
+}
+
+Future<void> _insertTaskRow(
+  SystumDatabase database, {
+  required String id,
+  String? goalId,
+  String? parentTaskId,
+}) async {
+  final now = DateTime(2026, 8, 1);
+  await database
+      .into(database.tasks)
+      .insert(
+        TasksCompanion.insert(
+          id: id,
+          title: id,
+          createdAt: now,
+          updatedAt: now,
+          goalId: Value(goalId),
+          parentTaskId: Value(parentTaskId),
+        ),
+      );
 }
 
 Task _buildTask({
