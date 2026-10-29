@@ -35,10 +35,39 @@ class TaskRepository {
     await _database.update(_database.tasks).replace(task.toCompanion());
   }
 
+  /// Deletes the task with [id].
+  ///
+  /// Any direct subtasks are promoted to standalone tasks before the task is
+  /// deleted. Promotion and deletion run in a single transaction.
   Future<void> delete(String id) async {
-    await (_database.delete(
-      _database.tasks,
-    )..where((tasks) => tasks.id.equals(id))).go();
+    await _database.transaction(() async {
+      final task = await getById(id);
+      if (task == null) {
+        return;
+      }
+
+      final children = await (_database.select(
+        _database.tasks,
+      )..where((tasks) => tasks.parentTaskId.equals(id))).get();
+      if (children.isNotEmpty) {
+        final promotedRows =
+            await (_database.update(_database.tasks)
+                  ..where((tasks) => tasks.parentTaskId.equals(id)))
+                .write(const TasksCompanion(parentTaskId: Value(null)));
+        if (promotedRows != children.length) {
+          throw TaskRelationshipException(
+            'Could not promote all subtasks of task "$id".',
+          );
+        }
+      }
+
+      final deletedRows = await (_database.delete(
+        _database.tasks,
+      )..where((tasks) => tasks.id.equals(id))).go();
+      if (deletedRows == 0) {
+        throw TaskRelationshipException('Task "$id" does not exist.');
+      }
+    });
   }
 
   Future<void> setCompleted(String id, bool completed) async {
@@ -47,10 +76,50 @@ class TaskRepository {
         .write(TasksCompanion(completed: Value(completed)));
   }
 
+  /// Creates [subtask] beneath the existing [parentTaskId].
+  ///
+  /// Only one level of nesting is supported. The new subtask always inherits
+  /// the parent's goal. If [goalId] is provided, it must match the parent's
+  /// goal; the stored value is always the inherited one.
+  Future<void> createSubtask(
+    Task subtask,
+    String parentTaskId, {
+    String? goalId,
+  }) async {
+    final parent = await getById(parentTaskId);
+    if (parent == null) {
+      throw TaskRelationshipException(
+        'Parent task "$parentTaskId" does not exist.',
+      );
+    }
+    if (parent.parentTaskId != null) {
+      throw TaskRelationshipException(
+        'Task "$parentTaskId" is a subtask and cannot have subtasks.',
+      );
+    }
+    if (goalId != null && goalId != parent.goalId) {
+      final parentGoal = parent.goalId == null
+          ? 'no goal'
+          : 'goal "${parent.goalId}"';
+      throw TaskRelationshipException(
+        'Subtask goal "$goalId" conflicts with the parent\'s $parentGoal.',
+      );
+    }
+
+    await _database
+        .into(_database.tasks)
+        .insert(
+          subtask.toCompanion().copyWith(
+            goalId: Value(parent.goalId),
+            parentTaskId: Value(parentTaskId),
+          ),
+        );
+  }
+
   /// Assigns an existing top-level task to an existing goal.
   ///
-  /// Subtasks are rejected until subtask support is implemented. The task's
-  /// other fields, including its timestamps, are left unchanged.
+  /// Subtasks inherit their parent's goal and cannot be assigned independently.
+  /// The task's other fields, including its timestamps, are left unchanged.
   Future<void> assignToGoal(String taskId, String goalId) async {
     final task = await getById(taskId);
     if (task == null) {
@@ -70,22 +139,40 @@ class TaskRepository {
     }
 
     final updatedRows =
-        await (_database.update(_database.tasks)
-              ..where((tasks) => tasks.id.equals(taskId)))
+        await (_database.update(_database.tasks)..where(
+              (tasks) => tasks.id.equals(taskId) & tasks.parentTaskId.isNull(),
+            ))
             .write(TasksCompanion(goalId: Value(goalId)));
     if (updatedRows == 0) {
-      throw TaskRelationshipException('Task "$taskId" does not exist.');
+      throw TaskRelationshipException(
+        'Task "$taskId" no longer exists or is now a subtask.',
+      );
     }
   }
 
   /// Removes a task's goal assignment without deleting the task.
+  ///
+  /// Subtasks inherit their parent's goal and cannot remove it independently.
   Future<void> removeFromGoal(String taskId) async {
+    final task = await getById(taskId);
+    if (task == null) {
+      throw TaskRelationshipException('Task "$taskId" does not exist.');
+    }
+    if (task.parentTaskId != null) {
+      throw TaskRelationshipException(
+        'Task "$taskId" is a subtask and cannot remove its inherited goal.',
+      );
+    }
+
     final updatedRows =
-        await (_database.update(_database.tasks)
-              ..where((tasks) => tasks.id.equals(taskId)))
+        await (_database.update(_database.tasks)..where(
+              (tasks) => tasks.id.equals(taskId) & tasks.parentTaskId.isNull(),
+            ))
             .write(const TasksCompanion(goalId: Value(null)));
     if (updatedRows == 0) {
-      throw TaskRelationshipException('Task "$taskId" does not exist.');
+      throw TaskRelationshipException(
+        'Task "$taskId" no longer exists or is now a subtask.',
+      );
     }
   }
 

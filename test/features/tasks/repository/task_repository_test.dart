@@ -330,31 +330,75 @@ void main() {
       expect(await repository.getAll(), isEmpty);
     });
 
-    test('assignToGoal rejects a subtask', () async {
-      final firstGoal = await _insertGoal(database, id: 'goal-1');
-      final secondGoal = await _insertGoal(database, id: 'goal-2');
-      await _insertTaskRow(database, id: 'parent-task', goalId: firstGoal.id);
-      await _insertTaskRow(
-        database,
-        id: 'child-task',
-        parentTaskId: 'parent-task',
-      );
+    test(
+      'assignToGoal rejects a subtask and preserves its inherited goal',
+      () async {
+        final firstGoal = await _insertGoal(database, id: 'goal-1');
+        final secondGoal = await _insertGoal(database, id: 'goal-2');
+        final parent = _buildTask(id: 'parent-task');
+        await repository.insert(parent);
+        await repository.assignToGoal(parent.id, firstGoal.id);
+        final child = _buildTask(id: 'child-task');
+        await repository.createSubtask(child, parent.id);
 
-      await expectLater(
-        repository.assignToGoal('child-task', secondGoal.id),
-        throwsA(
-          isA<TaskRelationshipException>().having(
-            (error) => error.message,
-            'message',
-            contains('subtask'),
+        await expectLater(
+          repository.assignToGoal(child.id, secondGoal.id),
+          throwsA(
+            isA<TaskRelationshipException>().having(
+              (error) => error.message,
+              'message',
+              contains('subtask'),
+            ),
           ),
-        ),
-      );
+        );
 
-      final child = (await repository.getById('child-task'))!;
-      expect(child.goalId, isNull);
-      expect(child.parentTaskId, 'parent-task');
-    });
+        final storedParent = (await repository.getById(parent.id))!;
+        expect(storedParent.goalId, firstGoal.id);
+        expect(storedParent.parentTaskId, isNull);
+
+        final storedChild = (await repository.getById(child.id))!;
+        expect(storedChild.goalId, firstGoal.id);
+        expect(storedChild.parentTaskId, parent.id);
+        expect(Task.fromRow(storedChild), equals(child));
+
+        expect(await repository.getByGoalId(firstGoal.id), hasLength(2));
+        expect(await repository.getByGoalId(secondGoal.id), isEmpty);
+      },
+    );
+
+    test(
+      'removeFromGoal rejects a subtask and preserves its inherited goal',
+      () async {
+        final goal = await _insertGoal(database, id: 'goal-1');
+        final parent = _buildTask(id: 'parent-task');
+        await repository.insert(parent);
+        await repository.assignToGoal(parent.id, goal.id);
+        final child = _buildTask(id: 'child-task');
+        await repository.createSubtask(child, parent.id);
+
+        await expectLater(
+          repository.removeFromGoal(child.id),
+          throwsA(
+            isA<TaskRelationshipException>().having(
+              (error) => error.message,
+              'message',
+              contains('subtask'),
+            ),
+          ),
+        );
+
+        final storedParent = (await repository.getById(parent.id))!;
+        expect(storedParent.goalId, goal.id);
+        expect(storedParent.parentTaskId, isNull);
+
+        final storedChild = (await repository.getById(child.id))!;
+        expect(storedChild.goalId, goal.id);
+        expect(storedChild.parentTaskId, parent.id);
+        expect(Task.fromRow(storedChild), equals(child));
+
+        expect(await repository.getByGoalId(goal.id), hasLength(2));
+      },
+    );
 
     test(
       'editing and completing a task preserves its goal assignment',
@@ -393,6 +437,248 @@ void main() {
       expect(await repository.getById(task.id), isNull);
     });
 
+    test(
+      'createSubtask inherits the parent goal and preserves its fields',
+      () async {
+        final goal = await _insertGoal(database, id: 'goal-1');
+        final parent = _buildTask(id: 'parent-task', title: 'Parent task');
+        await repository.insert(parent);
+        await repository.assignToGoal(parent.id, goal.id);
+        final subtask = _buildTask(
+          id: 'subtask',
+          title: 'Subtask title',
+          description: 'Subtask description',
+          completed: true,
+          createdAt: DateTime(2026, 8, 2, 8),
+          updatedAt: DateTime(2026, 8, 3, 9),
+          dueDate: DateTime(2026, 8, 20),
+          priority: 4,
+          category: 'Home',
+        );
+
+        await repository.createSubtask(subtask, parent.id);
+
+        final storedSubtask = (await repository.getById(subtask.id))!;
+        expect(storedSubtask.parentTaskId, parent.id);
+        expect(storedSubtask.goalId, goal.id);
+        expect(Task.fromRow(storedSubtask), equals(subtask));
+
+        final storedParent = (await repository.getById(parent.id))!;
+        expect(storedParent.parentTaskId, isNull);
+        expect(storedParent.goalId, goal.id);
+      },
+    );
+
+    test(
+      'createSubtask keeps the goal null when the parent has none',
+      () async {
+        final parent = _buildTask(id: 'parent-task');
+        await repository.insert(parent);
+        final subtask = _buildTask(id: 'subtask');
+
+        await repository.createSubtask(subtask, parent.id);
+
+        final storedSubtask = (await repository.getById(subtask.id))!;
+        expect(storedSubtask.parentTaskId, parent.id);
+        expect(storedSubtask.goalId, isNull);
+      },
+    );
+
+    test('createSubtask rejects a missing parent', () async {
+      final subtask = _buildTask(id: 'subtask');
+
+      await expectLater(
+        repository.createSubtask(subtask, 'missing-parent'),
+        throwsA(
+          isA<TaskRelationshipException>().having(
+            (error) => error.message,
+            'message',
+            contains('missing-parent'),
+          ),
+        ),
+      );
+
+      expect(await repository.getById(subtask.id), isNull);
+    });
+
+    test('createSubtask rejects a subtask as a parent', () async {
+      final parent = _buildTask(id: 'parent-task');
+      await repository.insert(parent);
+      final child = _buildTask(id: 'child-task');
+      await repository.createSubtask(child, parent.id);
+      final grandchild = _buildTask(id: 'grandchild-task');
+
+      await expectLater(
+        repository.createSubtask(grandchild, child.id),
+        throwsA(
+          isA<TaskRelationshipException>().having(
+            (error) => error.message,
+            'message',
+            contains('cannot have subtasks'),
+          ),
+        ),
+      );
+
+      expect(await repository.getById(grandchild.id), isNull);
+      expect((await repository.getById(child.id))?.parentTaskId, parent.id);
+    });
+
+    test('createSubtask rejects a conflicting goal', () async {
+      final parentGoal = await _insertGoal(database, id: 'goal-1');
+      final otherGoal = await _insertGoal(database, id: 'goal-2');
+      final parent = _buildTask(id: 'parent-task');
+      await repository.insert(parent);
+      await repository.assignToGoal(parent.id, parentGoal.id);
+      final subtask = _buildTask(id: 'subtask');
+
+      await expectLater(
+        repository.createSubtask(subtask, parent.id, goalId: otherGoal.id),
+        throwsA(
+          isA<TaskRelationshipException>().having(
+            (error) => error.message,
+            'message',
+            contains(otherGoal.id),
+          ),
+        ),
+      );
+
+      expect(await repository.getById(subtask.id), isNull);
+
+      await repository.createSubtask(subtask, parent.id, goalId: parentGoal.id);
+      expect((await repository.getById(subtask.id))?.goalId, parentGoal.id);
+    });
+
+    test('delete removes only the requested subtask', () async {
+      final goal = await _insertGoal(database, id: 'goal-1');
+      final parent = _buildTask(id: 'parent-task');
+      await repository.insert(parent);
+      await repository.assignToGoal(parent.id, goal.id);
+      final firstChild = _buildTask(id: 'child-1', title: 'First child');
+      final secondChild = _buildTask(id: 'child-2', title: 'Second child');
+      await repository.createSubtask(firstChild, parent.id);
+      await repository.createSubtask(secondChild, parent.id);
+
+      await repository.delete(firstChild.id);
+
+      expect(await repository.getById(firstChild.id), isNull);
+
+      final storedParent = (await repository.getById(parent.id))!;
+      expect(storedParent.parentTaskId, isNull);
+      expect(storedParent.goalId, goal.id);
+
+      final storedSibling = (await repository.getById(secondChild.id))!;
+      expect(storedSibling.parentTaskId, parent.id);
+      expect(storedSibling.goalId, goal.id);
+      expect(Task.fromRow(storedSibling), equals(secondChild));
+    });
+
+    test('delete promotes all subtasks and preserves their fields', () async {
+      final goal = await _insertGoal(database, id: 'goal-1');
+      final parent = _buildTask(id: 'parent-task');
+      await repository.insert(parent);
+      await repository.assignToGoal(parent.id, goal.id);
+      final firstChild = _buildTask(
+        id: 'child-1',
+        title: 'First child',
+        description: 'First description',
+        completed: true,
+        createdAt: DateTime(2026, 8, 2, 8),
+        updatedAt: DateTime(2026, 8, 3, 9),
+        dueDate: DateTime(2026, 8, 20),
+        priority: 4,
+        category: 'Work',
+      );
+      final secondChild = _buildTask(
+        id: 'child-2',
+        title: 'Second child',
+        description: null,
+        completed: false,
+        createdAt: DateTime(2026, 8, 4, 10),
+        updatedAt: DateTime(2026, 8, 5, 11),
+        dueDate: null,
+        priority: 1,
+        category: null,
+      );
+      await repository.createSubtask(firstChild, parent.id);
+      await repository.createSubtask(secondChild, parent.id);
+
+      await repository.delete(parent.id);
+
+      expect(await repository.getById(parent.id), isNull);
+
+      final storedFirstChild = (await repository.getById(firstChild.id))!;
+      expect(storedFirstChild.parentTaskId, isNull);
+      expect(storedFirstChild.goalId, goal.id);
+      expect(Task.fromRow(storedFirstChild), equals(firstChild));
+
+      final storedSecondChild = (await repository.getById(secondChild.id))!;
+      expect(storedSecondChild.parentTaskId, isNull);
+      expect(storedSecondChild.goalId, goal.id);
+      expect(Task.fromRow(storedSecondChild), equals(secondChild));
+
+      expect(await repository.getAll(), hasLength(2));
+    });
+
+    test('delete removes a parent without children', () async {
+      final parent = _buildTask(id: 'parent-task');
+      final unrelatedTask = _buildTask(id: 'unrelated-task');
+      await repository.insert(parent);
+      await repository.insert(unrelatedTask);
+
+      await repository.delete(parent.id);
+
+      expect(await repository.getById(parent.id), isNull);
+      expect(await repository.getById(unrelatedTask.id), isNotNull);
+    });
+
+    test('delete rolls back when subtask promotion fails', () async {
+      final parent = _buildTask(id: 'parent-task');
+      final child = _buildTask(id: 'child-task');
+      await repository.insert(parent);
+      await repository.createSubtask(child, parent.id);
+      await database.customStatement('''
+        CREATE TRIGGER fail_subtask_promotion
+        BEFORE UPDATE OF parent_task_id ON tasks
+        WHEN OLD.parent_task_id IS NOT NULL AND NEW.parent_task_id IS NULL
+        BEGIN
+          SELECT RAISE(ABORT, 'simulated promotion failure');
+        END;
+      ''');
+
+      await expectLater(
+        repository.delete(parent.id),
+        throwsA(isA<SqliteException>()),
+      );
+
+      expect(await repository.getById(parent.id), isNotNull);
+      final storedChild = (await repository.getById(child.id))!;
+      expect(storedChild.parentTaskId, parent.id);
+      expect(Task.fromRow(storedChild), equals(child));
+    });
+
+    test('delete rolls back promotion when parent deletion fails', () async {
+      final parent = _buildTask(id: 'parent-task');
+      final child = _buildTask(id: 'child-task');
+      await repository.insert(parent);
+      await repository.createSubtask(child, parent.id);
+      await database.customStatement('''
+        CREATE TRIGGER fail_parent_deletion
+        BEFORE DELETE ON tasks
+        WHEN OLD.id = 'parent-task'
+        BEGIN
+          SELECT RAISE(ABORT, 'simulated delete failure');
+        END;
+      ''');
+
+      await expectLater(
+        repository.delete(parent.id),
+        throwsA(isA<SqliteException>()),
+      );
+
+      expect(await repository.getById(parent.id), isNotNull);
+      expect((await repository.getById(child.id))?.parentTaskId, parent.id);
+    });
+
     test('foreign keys reject invalid goal references', () async {
       final task = _buildTask();
       await repository.insert(task);
@@ -422,22 +708,27 @@ void main() {
       expect((await repository.getById(task.id))?.goalId, isNull);
     });
 
-    test('foreign keys prevent deleting a referenced parent task', () async {
-      await _insertTaskRow(database, id: 'parent-task');
-      await _insertTaskRow(
-        database,
-        id: 'child-task',
-        parentTaskId: 'parent-task',
-      );
+    test(
+      'foreign keys prevent raw deletion of a referenced parent task',
+      () async {
+        await _insertTaskRow(database, id: 'parent-task');
+        await _insertTaskRow(
+          database,
+          id: 'child-task',
+          parentTaskId: 'parent-task',
+        );
 
-      await expectLater(
-        repository.delete('parent-task'),
-        throwsA(isA<SqliteException>()),
-      );
+        await expectLater(
+          database.customStatement(
+            "DELETE FROM tasks WHERE id = 'parent-task'",
+          ),
+          throwsA(isA<SqliteException>()),
+        );
 
-      expect(await repository.getById('parent-task'), isNotNull);
-      expect(await repository.getById('child-task'), isNotNull);
-    });
+        expect(await repository.getById('parent-task'), isNotNull);
+        expect(await repository.getById('child-task'), isNotNull);
+      },
+    );
   });
 }
 
