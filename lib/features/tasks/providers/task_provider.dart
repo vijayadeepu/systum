@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/database/database.dart';
 import '../../../shared/providers/database_provider.dart';
 import '../models/task.dart';
+import '../models/task_hierarchy.dart';
 import '../repository/task_repository.dart';
 
 final taskRepositoryProvider = Provider<TaskRepository>((ref) {
@@ -12,17 +13,42 @@ final taskRepositoryProvider = Provider<TaskRepository>((ref) {
   return TaskRepository(database);
 });
 
+/// The canonical task state is a flat collection.
+///
+/// Subtasks carry their `parentTaskId`, so a single list stays consistent with
+/// the database and can be grouped for display without maintaining a second,
+/// independently refreshable hierarchy. [taskHierarchyProvider] is a pure
+/// projection of this state.
 final taskProvider = AsyncNotifierProvider<TaskNotifier, List<TaskRow>>(
   TaskNotifier.new,
 );
+
+final taskHierarchyProvider = Provider<TaskHierarchy>((ref) {
+  final tasks = ref.watch(taskProvider).value;
+  return TaskHierarchy.fromRows(tasks ?? const []);
+});
 
 class TaskNotifier extends AsyncNotifier<List<TaskRow>> {
   late final TaskRepository _repository = ref.read(taskRepositoryProvider);
   int _stateRevision = 0;
 
   @override
-  FutureOr<List<TaskRow>> build() {
-    return _repository.getAll();
+  Future<List<TaskRow>> build() async {
+    final revision = _stateRevision;
+    final result = await AsyncValue.guard(_repository.getAll);
+    if (revision != _stateRevision) {
+      final currentState = state;
+      if (currentState.hasValue) {
+        return currentState.requireValue;
+      }
+      if (currentState case AsyncError(:final error, :final stackTrace)) {
+        Error.throwWithStackTrace(error, stackTrace);
+      }
+    }
+    if (result case AsyncError(:final error, :final stackTrace)) {
+      Error.throwWithStackTrace(error, stackTrace);
+    }
+    return result.requireValue;
   }
 
   Future<void> loadTasks() {
@@ -37,6 +63,12 @@ class TaskNotifier extends AsyncNotifier<List<TaskRow>> {
     return _mutate(() => _repository.update(task));
   }
 
+  Future<void> createSubtask(Task subtask, String parentTaskId) {
+    return _mutate(() => _repository.createSubtask(subtask, parentTaskId));
+  }
+
+  /// Deletes a task. Direct subtasks of a parent are promoted to standalone
+  /// tasks by the repository and the refreshed state reflects the promotion.
   Future<void> deleteTask(String id) {
     return _mutate(() => _repository.delete(id));
   }

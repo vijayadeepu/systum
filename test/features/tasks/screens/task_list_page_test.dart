@@ -58,6 +58,19 @@ void main() {
     expect(await TaskRepository(database).getAll(), isEmpty);
   });
 
+  testWidgets('title longer than the database limit is rejected', (
+    tester,
+  ) async {
+    await pumpTaskList(tester);
+    await openCreateDialog(tester);
+    await tester.enterText(find.byType(TextFormField).first, 'a' * 121);
+    await tester.tap(find.text('Create'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Title must be 120 characters or fewer'), findsOneWidget);
+    expect(await TaskRepository(database).getAll(), isEmpty);
+  });
+
   testWidgets('successful creation is persisted and displayed', (tester) async {
     await pumpTaskList(tester);
     await openCreateDialog(tester);

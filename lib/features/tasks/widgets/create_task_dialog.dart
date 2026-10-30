@@ -8,9 +8,12 @@ import '../../../core/theme/app_typography.dart';
 import '../models/task.dart';
 
 class CreateTaskDialog extends StatefulWidget {
-  const CreateTaskDialog({super.key, this.task});
+  const CreateTaskDialog({super.key, this.task, this.parentTitle});
 
   final Task? task;
+
+  /// When provided, the dialog creates a subtask for the named parent.
+  final String? parentTitle;
 
   @override
   State<CreateTaskDialog> createState() => _CreateTaskDialogState();
@@ -24,6 +27,22 @@ class _CreateTaskDialogState extends State<CreateTaskDialog> {
   late int _priority;
 
   bool get _isEditing => widget.task != null;
+
+  bool get _isSubtask => !_isEditing && widget.parentTitle != null;
+
+  String get _dialogTitle {
+    if (_isEditing) {
+      return 'Edit Task';
+    }
+    return _isSubtask ? 'Add Subtask' : 'Create Task';
+  }
+
+  String get _submitLabel {
+    if (_isEditing) {
+      return 'Save';
+    }
+    return _isSubtask ? 'Add' : 'Create';
+  }
 
   @override
   void initState() {
@@ -92,7 +111,7 @@ class _CreateTaskDialogState extends State<CreateTaskDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(_isEditing ? 'Edit Task' : 'Create Task'),
+      title: Text(_dialogTitle),
       content: Form(
         key: _formKey,
         child: SingleChildScrollView(
@@ -100,12 +119,25 @@ class _CreateTaskDialogState extends State<CreateTaskDialog> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              if (_isSubtask) ...[
+                Text(
+                  'Under "${widget.parentTitle}"',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.bodySmall,
+                ),
+                const SizedBox(height: AppSpacing.md),
+              ],
               TextFormField(
                 controller: _titleController,
                 decoration: const InputDecoration(labelText: 'Title'),
                 validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
+                  final title = value?.trim() ?? '';
+                  if (title.isEmpty) {
                     return 'Title is required';
+                  }
+                  if (title.length > 120) {
+                    return 'Title must be 120 characters or fewer';
                   }
                   return null;
                 },
@@ -188,10 +220,7 @@ class _CreateTaskDialogState extends State<CreateTaskDialog> {
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('Cancel'),
         ),
-        FilledButton(
-          onPressed: _submit,
-          child: Text(_isEditing ? 'Save' : 'Create'),
-        ),
+        FilledButton(onPressed: _submit, child: Text(_submitLabel)),
       ],
     );
   }

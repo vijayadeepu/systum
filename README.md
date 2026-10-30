@@ -76,7 +76,7 @@ This project emphasizes:
 
 ## Current Status
 
-**Project Stage:** Engineering Foundation
+**Project Stage:** Task Execution Foundation
 
 ### Completed
 
@@ -88,19 +88,25 @@ This project emphasizes:
 * Material 3 design system foundation
 * Drift database infrastructure
 * Riverpod dependency composition
-* Task database schema
-* Task repository implementation
-* Repository unit tests
+* Task database schema and repository
+* Task creation, editing, completion, reopening, and deletion
+* Goal schema and `GoalRepository` CRUD
+* Task-to-goal assignment and retrieval by goal
+* One-level subtasks with inherited goals
+* Transactional parent deletion that promotes direct subtasks
+* Riverpod task state management and hierarchy UI
+* Goal progress calculation foundation
+* Repository, provider, and widget tests
 
 ### Next Milestones
 
-* Riverpod task state management
-* Task list UI
-* Create/Edit task workflow
+* Goal management and task-goal assignment UI
+* Goal progress presentation
 * Search & filtering
 * Logging infrastructure
 * Global error handling
 * Settings infrastructure
+* Focus sessions
 
 ---
 
@@ -113,19 +119,21 @@ lib/
 │   ├── bootstrap.dart
 │   └── router.dart
 ├── core/
-│   ├── constants/
 │   ├── database/
-│   ├── errors/
-│   ├── logging/
-│   ├── theme/
-│   └── utils/
+│   └── theme/
 ├── features/
+│   ├── goals/
+│   │   ├── models/
+│   │   └── repository/
 │   ├── home/
 │   └── tasks/
+│       ├── models/
+│       ├── providers/
+│       ├── repository/
+│       ├── screens/
+│       └── widgets/
 ├── shared/
-│   ├── extensions/
-│   ├── providers/
-│   └── widgets/
+│   └── providers/
 └── main.dart
 ```
 
@@ -174,16 +182,66 @@ flutter pub get
 flutter run
 ```
 
+Use `flutter devices` to list available targets, then pass one explicitly when
+needed, for example `flutter run -d linux` or `flutter run -d <android-device>`.
+
 ### Verify the Project
 
 ```bash
-dart analyze
+dart format lib test
+flutter analyze
 flutter test
 ```
 
-Both commands should complete successfully before contributing changes.
+Run a focused test file while iterating:
+
+```bash
+flutter test test/features/tasks/providers/task_provider_test.dart
+```
+
+All commands should complete successfully before contributing changes.
 
 ---
+
+## Task Hierarchy and Goal Rules
+
+Systum supports exactly one level of nesting:
+
+* A subtask must be created beneath an existing top-level task.
+* A subtask cannot have its own subtasks.
+* A subtask always inherits its parent's goal.
+* A subtask cannot independently assign or remove a goal.
+* Reassigning or removing a parent's goal updates all of its direct subtasks in
+  the same database transaction; a failure rolls every assignment back.
+* Deleting a parent promotes its direct subtasks to standalone tasks. The
+  promotion and deletion run in one database transaction; a failure rolls both
+  back.
+* The task provider keeps one flat list of task rows. The UI derives the
+  parent/child grouping from `parentTaskId`, so there is no second list that
+  can drift from the database.
+
+### Goal Progress Counting Rule
+
+Goal progress counts actionable leaf tasks only:
+
+* A leaf is a task with no direct children.
+* A parent with children is a heading and is not counted alongside its
+  children.
+* Only tasks assigned to the goal are counted; tasks without a goal are
+  ignored.
+* A goal with no actionable tasks reports `0/0`, a fraction of `0.0`, and is
+  not considered complete.
+* A completed parent with incomplete children does not complete the goal.
+* Promoted children become leaves and count normally.
+
+The calculation lives in `GoalProgress` and is pure: it never mutates task
+data and is independent of widgets and timers.
+
+## Known Limitations
+
+* There is no goal management or task-goal assignment UI yet.
+* Goal progress is calculated but not yet displayed.
+* Focus sessions, search, filtering, and notifications are not implemented.
 
 ## Roadmap
 
@@ -199,17 +257,24 @@ Both commands should complete successfully before contributing changes.
 * [x] Riverpod dependency composition
 * [x] Task schema
 * [x] Task repository
-* [x] Repository unit tests
+* [x] Task state management and list UI
+* [x] Create/Edit/Complete/Delete task flows
+* [x] Goal schema and repository
+* [x] Task-to-goal assignment
+* [x] One-level subtasks and hierarchy UI
+* [x] Transactional child promotion on parent deletion
+* [x] Goal progress calculation
+* [x] Repository, provider, and widget tests
 
 ### Current Focus
 
-* [ ] Riverpod task state management
-* [ ] Task list UI
-* [ ] Create/Edit task flow
+* [ ] Goal management and assignment UI
+* [ ] Goal progress presentation
 * [ ] Search & filtering
 
 ### Future
 
+* [ ] Focus sessions
 * [ ] Habit tracking
 * [ ] Dashboard
 * [ ] Productivity modules

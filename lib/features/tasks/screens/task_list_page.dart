@@ -14,6 +14,7 @@ class TaskListPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tasksState = ref.watch(taskProvider);
+    final hierarchy = ref.watch(taskHierarchyProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Tasks')),
@@ -83,34 +84,39 @@ class TaskListPage extends ConsumerWidget {
 
           return ListView.separated(
             padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-            itemCount: tasks.length,
+            itemCount: hierarchy.roots.length,
             separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.xs),
             itemBuilder: (context, index) {
-              final task = tasks[index];
+              final task = hierarchy.roots[index];
+              final subtasks = hierarchy.childrenOf(task.id);
 
-              return TaskTile(
-                task: task,
-                onEdit: () => _editTask(context, ref, task),
-                onDelete: () => _deleteTask(context, ref, task),
-                onToggle: (completed) async {
-                  if (completed == null) {
-                    return;
-                  }
-
-                  try {
-                    await ref
-                        .read(taskProvider.notifier)
-                        .setCompleted(task.id, completed);
-                  } catch (error) {
-                    if (context.mounted) {
-                      _showMutationError(
-                        context,
-                        'Could not update task',
-                        error,
-                      );
-                    }
-                  }
-                },
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TaskTile(
+                    task: task,
+                    subtaskCount: subtasks.length,
+                    onAddSubtask: () => _addSubtask(context, ref, task),
+                    onEdit: () => _editTask(context, ref, task),
+                    onDelete: () => _deleteTask(
+                      context,
+                      ref,
+                      task,
+                      subtaskCount: subtasks.length,
+                    ),
+                    onToggle: (completed) =>
+                        _setCompleted(context, ref, task, completed),
+                  ),
+                  for (final subtask in subtasks)
+                    TaskTile(
+                      task: subtask,
+                      isSubtask: true,
+                      onEdit: () => _editTask(context, ref, subtask),
+                      onDelete: () => _deleteTask(context, ref, subtask),
+                      onToggle: (completed) =>
+                          _setCompleted(context, ref, subtask, completed),
+                    ),
+                ],
               );
             },
           );
@@ -142,16 +148,64 @@ class TaskListPage extends ConsumerWidget {
     }
   }
 
-  Future<void> _deleteTask(
+  Future<void> _addSubtask(
+    BuildContext context,
+    WidgetRef ref,
+    TaskRow parent,
+  ) async {
+    final subtask = await showDialog<Task>(
+      context: context,
+      builder: (_) => CreateTaskDialog(parentTitle: parent.title),
+    );
+
+    if (subtask == null || !context.mounted) {
+      return;
+    }
+
+    try {
+      await ref.read(taskProvider.notifier).createSubtask(subtask, parent.id);
+    } catch (error) {
+      if (context.mounted) {
+        _showMutationError(context, 'Could not add subtask', error);
+      }
+    }
+  }
+
+  Future<void> _setCompleted(
     BuildContext context,
     WidgetRef ref,
     TaskRow task,
+    bool? completed,
   ) async {
+    if (completed == null) {
+      return;
+    }
+
+    try {
+      await ref.read(taskProvider.notifier).setCompleted(task.id, completed);
+    } catch (error) {
+      if (context.mounted) {
+        _showMutationError(context, 'Could not update task', error);
+      }
+    }
+  }
+
+  Future<void> _deleteTask(
+    BuildContext context,
+    WidgetRef ref,
+    TaskRow task, {
+    int subtaskCount = 0,
+  }) async {
+    final confirmationMessage = subtaskCount == 0
+        ? 'Delete "${task.title}"? This cannot be undone.'
+        : 'Delete "${task.title}"? Its '
+              '${subtaskCount == 1 ? 'subtask' : '$subtaskCount subtasks'} '
+              'will become standalone ${subtaskCount == 1 ? 'task' : 'tasks'}.';
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete task?'),
-        content: Text('Delete "${task.title}"? This cannot be undone.'),
+        content: Text(confirmationMessage),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),

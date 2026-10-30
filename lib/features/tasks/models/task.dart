@@ -4,6 +4,11 @@ import '../../../core/database/database.dart';
 
 const _unset = Object();
 
+/// Editable task content used by create and edit flows.
+///
+/// Goal and parent relationships are intentionally managed by
+/// `TaskRepository` rather than this model. [toCompanion] omits those columns,
+/// so editing a task cannot accidentally clear its goal or parent.
 class Task {
   const Task({
     required this.id,

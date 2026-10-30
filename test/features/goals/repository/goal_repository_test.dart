@@ -1,12 +1,14 @@
 import 'dart:io';
 
-import 'package:drift/drift.dart' show Value;
+import 'package:drift/drift.dart' show Value, driftRuntimeOptions;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:systum/core/database/database.dart';
 import 'package:systum/features/goals/repository/goal_repository.dart';
 
 void main() {
+  driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
+
   group('GoalRepository', () {
     late SystumDatabase database;
     late GoalRepository repository;
@@ -75,6 +77,24 @@ void main() {
 
       expect(await repository.getById(goal.id), equals(updatedGoal));
     });
+
+    test(
+      'update rejects a missing goal instead of silently succeeding',
+      () async {
+        await expectLater(
+          repository.update(_buildGoal(id: 'missing-goal')),
+          throwsA(
+            isA<GoalNotFoundException>().having(
+              (error) => error.id,
+              'id',
+              'missing-goal',
+            ),
+          ),
+        );
+
+        expect(await repository.getAll(), isEmpty);
+      },
+    );
 
     test('delete removes the goal', () async {
       final goal = _buildGoal();

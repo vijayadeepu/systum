@@ -20,7 +20,12 @@ class GoalRepository {
   }
 
   Future<void> update(GoalRow goal) async {
-    await _database.update(_database.goals).replace(goal.toCompanion(true));
+    final updated = await _database
+        .update(_database.goals)
+        .replace(goal.toCompanion(true));
+    if (!updated) {
+      throw GoalNotFoundException(goal.id);
+    }
   }
 
   Future<void> delete(String id) async {
@@ -28,4 +33,13 @@ class GoalRepository {
       _database.goals,
     )..where((goals) => goals.id.equals(id))).go();
   }
+}
+
+class GoalNotFoundException implements Exception {
+  const GoalNotFoundException(this.id);
+
+  final String id;
+
+  @override
+  String toString() => 'GoalNotFoundException: goal "$id" does not exist.';
 }
