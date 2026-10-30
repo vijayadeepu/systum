@@ -7,12 +7,20 @@ import 'package:systum/core/database/database.dart';
 import 'package:systum/features/goals/models/goal_date.dart';
 
 void main() {
-  group('SystumDatabase schema version 3', () {
+  group('SystumDatabase schema version 4', () {
     test('creates the current schema in a fresh database', () async {
       final database = SystumDatabase.test(NativeDatabase.memory());
       addTearDown(database.close);
 
-      expect(await _tableNames(database), containsAll(['goals', 'tasks']));
+      expect(
+        await _tableNames(database),
+        containsAll([
+          'goals',
+          'tasks',
+          'focus_sessions',
+          'focus_session_intervals',
+        ]),
+      );
       expect(
         await _indexNames(database),
         containsAll(['tasks_goal_id_idx', 'tasks_parent_task_id_idx']),
@@ -113,9 +121,17 @@ void main() {
         expect(
           (await database.customSelect('PRAGMA user_version').getSingle())
               .read<int>('user_version'),
-          3,
+          4,
         );
-        expect(await _tableNames(database), containsAll(['goals', 'tasks']));
+        expect(
+          await _tableNames(database),
+          containsAll([
+            'goals',
+            'tasks',
+            'focus_sessions',
+            'focus_session_intervals',
+          ]),
+        );
         expect(
           await _indexNames(database),
           containsAll(['tasks_goal_id_idx', 'tasks_parent_task_id_idx']),
@@ -361,7 +377,7 @@ void main() {
                   .customSelect('PRAGMA user_version')
                   .getSingle())
               .read<int>('user_version'),
-          3,
+          4,
         );
 
         final parent = await (migratedDatabase.select(

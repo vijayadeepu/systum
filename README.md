@@ -1,42 +1,16 @@
 # Systum
 
-> An offline-first personal productivity operating system built with Flutter.
+> An offline-first personal productivity app for tasks, goals, and focus sessions.
 
 ## Overview
 
-Systum is a long-term software engineering project focused on building a production-quality, offline-first productivity platform rather than a simple to-do application.
-
-The primary objective is to demonstrate modern Flutter engineering practices, evolutionary architecture, maintainable code, and professional development workflows. Every architectural decision is introduced only when it provides measurable value, allowing the codebase to evolve naturally as the application grows.
-
-This repository prioritizes engineering quality, developer experience, and long-term maintainability over rapid feature development.
+Systum stores tasks, goals, Focus sessions, and Pomodoro progression locally. SQLite is the source of truth, so core workflows do not require an internet connection.
 
 ---
 
 ## Vision
 
-Systum is designed to evolve into a modular productivity operating system that helps users manage work, learning, and personal growth.
-
-Planned capabilities include:
-
-* Task Management
-* Subtasks
-* Projects & Categories
-* Dashboard
-* Habit Tracking
-* Pomodoro Timer
-* Countdown Timers
-* Hydration Tracking
-* Learning Tracker
-* Statistics & Analytics
-* Search & Filtering
-* Notifications
-* Calendar Integration
-* AI Assistant
-* Cloud Synchronization
-* Plugin Architecture
-* Cross-platform Support
-
-Features will be introduced incrementally on top of a stable engineering foundation.
+The current release focuses on task and goal management, recoverable focus sessions, and explicit Pomodoro cycles. It does not include cloud services or require network access for its core workflows.
 
 ---
 
@@ -76,7 +50,7 @@ This project emphasizes:
 
 ## Current Status
 
-**Project Stage:** Goal Management
+**Project Stage:** v0.1.0 Early Access — release validation
 
 ### Completed
 
@@ -102,15 +76,26 @@ This project emphasizes:
 * Derived goal lifecycle states (active, completed, overdue)
 * Target dates with local calendar-day handling
 * Repository, provider, and widget tests
+* Focus session domain model and interval-based duration calculations
+* Focus schema v4 with transactional upgrade and migration coverage
+* Transactional focus session lifecycle persistence and task snapshots
+* Riverpod focus session/history state, injectable system clock, and foreground
+  elapsed-time display derived from persisted intervals
+* Focus setup, active-session controls, recovery, and task navigation entry
+* Pomodoro settings stored locally and cycle progression reconstructed from
+  persisted session history
+* Focus time aggregation from persisted intervals, including local-day splits,
+  task snapshots, interruption policy, and overlap validation
 
-### Next Milestones
+### Current limitations
 
-* Search & filtering
-* Focus sessions
-* Logging infrastructure
-* Global error handling
-* Settings infrastructure
-* Dark theme
+* Focus history is currently loaded as one indexed local query; pagination has
+  not been added because no measured query problem exists yet.
+* Search, filtering, and manual ordering are not implemented.
+* Android release signing must be configured with a private key by the release
+  owner. The repository does not contain signing credentials.
+* The Android application ID remains `com.example.systum`; changing it requires
+  an explicit product decision before public distribution.
 
 ---
 
@@ -133,6 +118,12 @@ lib/
 │   │   ├── screens/
 │   │   └── widgets/
 │   ├── home/
+│   ├── focus/
+│   │   ├── models/
+│   │   ├── providers/
+│   │   ├── repository/
+│   │   ├── screens/
+│   │   └── widgets/
 │   └── tasks/
 │       ├── models/
 │       ├── providers/
@@ -192,6 +183,60 @@ flutter run
 
 Use `flutter devices` to list available targets, then pass one explicitly when
 needed, for example `flutter run -d linux` or `flutter run -d <android-device>`.
+
+### Android builds and installation
+
+The Android application ID is `com.example.systum`, the displayed app name is
+`Systum`, the launcher icon follows the app's blue theme, and the current
+version is `0.1.0+1`. Minimum and target SDK values follow the installed Flutter
+SDK defaults in `android/app/build.gradle.kts` (min SDK 24, target SDK 36 with
+Flutter 3.44.7).
+
+Build a local debug APK with:
+
+```bash
+flutter build apk --debug
+```
+
+Install it on a connected device with:
+
+```bash
+flutter install
+```
+
+A distributable release requires an owner-managed Android release keystore.
+Create `android/key.properties` (already ignored by Git) with these four
+properties, using the path to the keystore on the build machine:
+
+```properties
+storeFile=/absolute/path/to/systum-release.jks
+storePassword=<keystore-password>
+keyAlias=<key-alias>
+keyPassword=<key-password>
+```
+
+If a keystore does not exist yet, generate one outside the repository:
+
+```bash
+keytool -genkeypair -v -keystore /absolute/path/to/systum-release.jks \
+  -keyalg RSA -keysize 2048 -validity 10000 -alias <key-alias>
+```
+
+In
+`android/app/build.gradle.kts`, load `android/key.properties` into a
+`java.util.Properties`, use its values to set `storeFile`, `storePassword`,
+`keyAlias`, and `keyPassword` in `signingConfigs.create("release")`, and assign
+`signingConfigs.getByName("release")` to the `release` build type. Keep both
+the keystore and properties file out of source control. The repository
+currently has no signing credentials or release config, so do not treat a
+debug-signed or unsigned APK as a release.
+After configuring signing, build with:
+
+```bash
+flutter build apk --release --build-name=0.1.0 --build-number=1
+```
+
+The APK is written under `build/app/outputs/flutter-apk/`.
 
 ### Verify the Project
 
@@ -283,14 +328,6 @@ cannot be recovered from legacy values.
 * The goal list and goal detail screens refresh task state after goal deletion,
   and progress always derives from the canonical task provider.
 
-## Known Limitations
-
-* There is no dark theme yet; the app currently ships a single light theme.
-* There is no dedicated full-screen task detail route. Tapping a task in a goal
-  opens the existing edit flow.
-* Focus sessions, search, filtering, and notifications are not implemented.
-* Goal ordering is newest-first; manual reordering is not implemented.
-
 ## Roadmap
 
 ### Foundation
@@ -317,27 +354,17 @@ cannot be recovered from legacy values.
 * [x] Task assignment and removal flows
 * [x] Goal lifecycle and target dates
 * [x] Repository, provider, and widget tests
+* [x] Focus interval persistence, recoverable session lifecycle, and Pomodoro
+  progression
+* [x] Pure daily and task focus-time aggregation with documented status policy
 
-### Current Focus
+### Release follow-up
 
-* [ ] Search & filtering
-* [ ] Focus sessions
-* [ ] Dark theme
-
-### Future
-
-* [ ] Logging infrastructure
-* [ ] Global error handling
-* [ ] Settings infrastructure
-* [ ] Habit tracking
-* [ ] Dashboard
-* [ ] Productivity modules
-* [ ] Notifications
-* [ ] Backup & Restore
-* [ ] Calendar integration
-* [ ] Cloud synchronization
-* [ ] AI assistant
-* [ ] Plugin architecture
+* [ ] Configure release signing outside the repository and validate on Android
+* [ ] Confirm the public Android application ID before distribution
+* [ ] Add device-level process-kill, device-restart, rotation, and small-screen
+  verification
+* [ ] Consider search and filtering after release reliability is established
 
 ---
 

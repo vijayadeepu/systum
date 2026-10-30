@@ -14,6 +14,7 @@ class TaskTile extends StatelessWidget {
     required this.onToggle,
     required this.onEdit,
     required this.onDelete,
+    this.onStartFocus,
     this.onAddSubtask,
     this.subtaskCount = 0,
     this.isSubtask = false,
@@ -27,6 +28,7 @@ class TaskTile extends StatelessWidget {
   final ValueChanged<bool?> onToggle;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
+  final VoidCallback? onStartFocus;
   final VoidCallback? onAddSubtask;
   final int subtaskCount;
   final bool isSubtask;
@@ -135,23 +137,34 @@ class TaskTile extends StatelessWidget {
                     ),
                   ),
                 ],
-                if (onAssignGoal != null || onRemoveFromGoal != null)
-                  PopupMenuButton<_TaskGoalAction>(
-                    tooltip: 'Goal actions for ${task.title}',
+                if (onAssignGoal != null ||
+                    onRemoveFromGoal != null ||
+                    onStartFocus != null)
+                  PopupMenuButton<_TaskTileAction>(
+                    tooltip: onAssignGoal != null || onRemoveFromGoal != null
+                        ? 'Goal actions for ${task.title}'
+                        : 'Task actions for ${task.title}',
                     onSelected: (action) {
                       switch (action) {
-                        case _TaskGoalAction.assign:
+                        case _TaskTileAction.assign:
                           onAssignGoal?.call();
-                        case _TaskGoalAction.open:
+                        case _TaskTileAction.open:
                           onOpenGoal?.call();
-                        case _TaskGoalAction.remove:
+                        case _TaskTileAction.remove:
                           onRemoveFromGoal?.call();
+                        case _TaskTileAction.focus:
+                          onStartFocus?.call();
                       }
                     },
                     itemBuilder: (context) => [
+                      if (onStartFocus != null)
+                        const PopupMenuItem(
+                          value: _TaskTileAction.focus,
+                          child: Text('Start focus'),
+                        ),
                       if (onAssignGoal != null)
                         PopupMenuItem(
-                          value: _TaskGoalAction.assign,
+                          value: _TaskTileAction.assign,
                           child: Text(
                             goalTitle == null
                                 ? 'Assign to goal'
@@ -160,12 +173,12 @@ class TaskTile extends StatelessWidget {
                         ),
                       if (goalTitle != null && onOpenGoal != null)
                         const PopupMenuItem(
-                          value: _TaskGoalAction.open,
+                          value: _TaskTileAction.open,
                           child: Text('Open goal'),
                         ),
                       if (onRemoveFromGoal != null)
                         const PopupMenuItem(
-                          value: _TaskGoalAction.remove,
+                          value: _TaskTileAction.remove,
                           child: Text('Remove from goal'),
                         ),
                     ],
@@ -230,7 +243,7 @@ class TaskTile extends StatelessWidget {
   }
 }
 
-enum _TaskGoalAction { assign, open, remove }
+enum _TaskTileAction { assign, open, remove, focus }
 
 class _GoalLink extends StatelessWidget {
   const _GoalLink({

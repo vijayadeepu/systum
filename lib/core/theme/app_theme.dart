@@ -80,4 +80,31 @@ final class AppTheme {
       ),
     );
   }
+
+  static ThemeData get dark {
+    final base = light;
+    return base.copyWith(
+      brightness: Brightness.dark,
+      colorScheme: ColorScheme.dark(
+        primary: AppColors.primary,
+        onPrimary: Colors.white,
+        secondary: AppColors.secondary,
+        onSecondary: Colors.white,
+        error: AppColors.error,
+        onError: Colors.white,
+        surface: const Color(0xFF1F2937),
+        onSurface: Colors.white,
+      ),
+      scaffoldBackgroundColor: const Color(0xFF111827),
+      textTheme: base.textTheme.apply(
+        bodyColor: Colors.white,
+        displayColor: Colors.white,
+      ),
+      appBarTheme: base.appBarTheme.copyWith(
+        backgroundColor: const Color(0xFF111827),
+        foregroundColor: Colors.white,
+      ),
+      cardTheme: base.cardTheme.copyWith(color: const Color(0xFF1F2937)),
+    );
+  }
 }

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/database/database.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../focus/providers/focus_provider.dart';
 import '../../goals/providers/goal_provider.dart';
 import '../../goals/widgets/assignment_dialogs.dart';
 import '../models/task.dart';
@@ -20,6 +21,12 @@ class TaskListPage extends ConsumerWidget {
     final tasksState = ref.watch(taskProvider);
     final hierarchy = ref.watch(taskHierarchyProvider);
     final goalsState = ref.watch(goalProvider);
+    final focusState = ref.watch(focusSessionProvider);
+    final unresolvedSession = focusState.when(
+      data: (session) => session,
+      loading: () => null,
+      error: (_, _) => null,
+    );
     final goalTitles = {
       for (final goal in goalsState.value ?? const <GoalRow>[])
         goal.id: goal.title,
@@ -33,6 +40,26 @@ class TaskListPage extends ConsumerWidget {
             onPressed: () => context.push('/goals'),
             icon: const Icon(Icons.flag_outlined),
             label: const Text('Goals'),
+          ),
+          IconButton(
+            tooltip: focusState.hasError
+                ? 'Focus unavailable'
+                : unresolvedSession == null
+                ? 'Focus'
+                : 'Resume focus',
+            onPressed: () => context.push('/focus'),
+            icon: Icon(
+              focusState.hasError
+                  ? Icons.error_outline_rounded
+                  : unresolvedSession == null
+                  ? Icons.center_focus_strong_outlined
+                  : Icons.play_arrow_rounded,
+            ),
+          ),
+          IconButton(
+            tooltip: 'Focus history',
+            onPressed: () => context.push('/focus/history'),
+            icon: const Icon(Icons.history_rounded),
           ),
         ],
       ),
@@ -124,6 +151,12 @@ class TaskListPage extends ConsumerWidget {
                         : () => _removeFromGoal(context, ref, task),
                     onAddSubtask: () => _addSubtask(context, ref, task),
                     onEdit: () => _editTask(context, ref, task),
+                    onStartFocus: () => context.push(
+                      Uri(
+                        path: '/focus',
+                        queryParameters: {'taskId': task.id},
+                      ).toString(),
+                    ),
                     onDelete: () => _deleteTask(
                       context,
                       ref,
@@ -142,6 +175,12 @@ class TaskListPage extends ConsumerWidget {
                           ? null
                           : () => context.push('/goal/${subtask.goalId}'),
                       onEdit: () => _editTask(context, ref, subtask),
+                      onStartFocus: () => context.push(
+                        Uri(
+                          path: '/focus',
+                          queryParameters: {'taskId': subtask.id},
+                        ).toString(),
+                      ),
                       onDelete: () => _deleteTask(context, ref, subtask),
                       onToggle: (completed) =>
                           _setCompleted(context, ref, subtask, completed),
