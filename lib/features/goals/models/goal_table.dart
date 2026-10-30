@@ -1,5 +1,7 @@
 import 'package:drift/drift.dart';
 
+import 'goal_date.dart';
+
 @DataClassName('GoalRow')
 class Goals extends Table {
   TextColumn get id => text()();
@@ -8,7 +10,8 @@ class Goals extends Table {
 
   TextColumn get description => text().nullable()();
 
-  DateTimeColumn get targetDate => dateTime().nullable()();
+  IntColumn get targetDate =>
+      integer().map(const GoalDateConverter()).nullable()();
 
   DateTimeColumn get createdAt => dateTime()();
 

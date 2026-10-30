@@ -1,10 +1,13 @@
+import 'dart:io';
+
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:systum/core/database/database.dart';
+import 'package:systum/features/goals/models/goal_date.dart';
 
 void main() {
-  group('SystumDatabase schema version 2', () {
+  group('SystumDatabase schema version 3', () {
     test('creates the current schema in a fresh database', () async {
       final database = SystumDatabase.test(NativeDatabase.memory());
       addTearDown(database.close);
@@ -27,7 +30,7 @@ void main() {
               id: 'fresh-goal',
               title: 'Fresh goal',
               description: const Value('Created in a fresh database'),
-              targetDate: Value(DateTime(2026, 9, 1)),
+              targetDate: Value(GoalDate.fromDateTime(DateTime(2026, 9, 1))),
               createdAt: now,
               updatedAt: now,
             ),
@@ -35,7 +38,7 @@ void main() {
       final goal = await database.select(database.goals).getSingle();
       expect(goal.title, 'Fresh goal');
       expect(goal.description, 'Created in a fresh database');
-      expect(goal.targetDate, DateTime(2026, 9, 1));
+      expect(goal.targetDate, GoalDate.fromDateTime(DateTime(2026, 9, 1)));
       expect(goal.createdAt, now);
       expect(goal.updatedAt, now);
     });
@@ -110,7 +113,7 @@ void main() {
         expect(
           (await database.customSelect('PRAGMA user_version').getSingle())
               .read<int>('user_version'),
-          2,
+          3,
         );
         expect(await _tableNames(database), containsAll(['goals', 'tasks']));
         expect(
@@ -195,7 +198,224 @@ void main() {
       );
     });
   });
+
+  test(
+    'migrates version 2 target dates and preserves data across reopen',
+    () async {
+      final directory = await Directory.systemTemp.createTemp(
+        'systum_goal_date_migration_',
+      );
+      final databaseFile = File('${directory.path}/systum.sqlite');
+      final firstLegacyDate = DateTime(2026, 9, 1);
+      final secondLegacyDate = DateTime(2027, 1, 15, 23, 45);
+      final expectedFirstDate = GoalDate.fromDateTime(
+        DateTime.fromMillisecondsSinceEpoch(
+          _toVersion2DateTime(firstLegacyDate) * 1000,
+        ),
+      );
+      final expectedSecondDate = GoalDate.fromDateTime(
+        DateTime.fromMillisecondsSinceEpoch(
+          _toVersion2DateTime(secondLegacyDate) * 1000,
+        ),
+      );
+      SystumDatabase? database;
+
+      try {
+        var migratedDatabase = SystumDatabase.test(
+          NativeDatabase(
+            databaseFile,
+            setup: (legacyDatabase) {
+              legacyDatabase.execute('''
+                CREATE TABLE goals (
+                  id TEXT NOT NULL PRIMARY KEY,
+                  title TEXT NOT NULL CHECK (length(title) BETWEEN 1 AND 120),
+                  description TEXT,
+                  target_date INTEGER,
+                  created_at INTEGER NOT NULL,
+                  updated_at INTEGER NOT NULL
+                )
+              ''');
+              legacyDatabase.execute('''
+                CREATE TABLE tasks (
+                  id TEXT NOT NULL PRIMARY KEY,
+                  title TEXT NOT NULL CHECK (length(title) BETWEEN 1 AND 120),
+                  description TEXT,
+                  completed INTEGER NOT NULL DEFAULT 0
+                    CHECK (completed IN (0, 1)),
+                  created_at INTEGER NOT NULL,
+                  updated_at INTEGER NOT NULL,
+                  due_date INTEGER,
+                  priority INTEGER NOT NULL DEFAULT 2,
+                  category TEXT CHECK (length(category) <= 80),
+                  goal_id TEXT REFERENCES goals (id) ON DELETE SET NULL,
+                  parent_task_id TEXT REFERENCES tasks (id)
+                )
+              ''');
+              legacyDatabase.execute(
+                'CREATE INDEX tasks_goal_id_idx ON tasks (goal_id)',
+              );
+              legacyDatabase.execute(
+                'CREATE INDEX tasks_parent_task_id_idx '
+                'ON tasks (parent_task_id)',
+              );
+              for (final goal in [
+                (
+                  id: 'dated-one',
+                  title: 'First date',
+                  description: null,
+                  targetDate: firstLegacyDate,
+                ),
+                (
+                  id: 'dated-two',
+                  title: 'Second date',
+                  description: 'Preserve this detail',
+                  targetDate: secondLegacyDate,
+                ),
+                (
+                  id: 'undated',
+                  title: 'No target',
+                  description: null,
+                  targetDate: null,
+                ),
+              ]) {
+                legacyDatabase.execute(
+                  '''
+                  INSERT INTO goals (
+                    id, title, description, target_date, created_at, updated_at
+                  ) VALUES (?, ?, ?, ?, ?, ?)
+                  ''',
+                  [
+                    goal.id,
+                    goal.title,
+                    goal.description,
+                    goal.targetDate == null
+                        ? null
+                        : _toVersion2DateTime(goal.targetDate!),
+                    _toVersion2DateTime(DateTime(2026, 8, 1, 8)),
+                    _toVersion2DateTime(DateTime(2026, 8, 2, 9)),
+                  ],
+                );
+              }
+              legacyDatabase.execute(
+                '''
+                INSERT INTO tasks (
+                  id, title, description, completed, created_at, updated_at,
+                  due_date, priority, category, goal_id, parent_task_id
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''',
+                [
+                  'parent-task',
+                  'Preserve parent task',
+                  'Task detail',
+                  1,
+                  _toVersion2DateTime(DateTime(2026, 8, 1, 9)),
+                  _toVersion2DateTime(DateTime(2026, 8, 2, 10)),
+                  _toVersion2DateTime(DateTime(2026, 8, 5)),
+                  3,
+                  'Work',
+                  'dated-one',
+                  null,
+                ],
+              );
+              legacyDatabase.execute(
+                '''
+                INSERT INTO tasks (
+                  id, title, created_at, updated_at, goal_id, parent_task_id
+                ) VALUES (?, ?, ?, ?, ?, ?)
+                ''',
+                [
+                  'child-task',
+                  'Preserve child task',
+                  _toVersion2DateTime(DateTime(2026, 8, 3)),
+                  _toVersion2DateTime(DateTime(2026, 8, 3)),
+                  'dated-one',
+                  'parent-task',
+                ],
+              );
+              legacyDatabase.execute('PRAGMA user_version = 2');
+            },
+          ),
+        );
+        database = migratedDatabase;
+        final goals = await migratedDatabase
+            .select(migratedDatabase.goals)
+            .get();
+        final first = goals.singleWhere((goal) => goal.id == 'dated-one');
+        final second = goals.singleWhere((goal) => goal.id == 'dated-two');
+        final undated = goals.singleWhere((goal) => goal.id == 'undated');
+
+        expect(first.targetDate, expectedFirstDate);
+        expect(first.title, 'First date');
+        expect(first.description, isNull);
+        expect(first.createdAt, DateTime(2026, 8, 1, 8));
+        expect(first.updatedAt, DateTime(2026, 8, 2, 9));
+        expect(second.targetDate, expectedSecondDate);
+        expect(second.description, 'Preserve this detail');
+        expect(second.createdAt, DateTime(2026, 8, 1, 8));
+        expect(second.updatedAt, DateTime(2026, 8, 2, 9));
+        expect(undated.title, 'No target');
+        expect(undated.description, isNull);
+        expect(undated.targetDate, isNull);
+        expect(
+          (await migratedDatabase
+                  .customSelect('PRAGMA user_version')
+                  .getSingle())
+              .read<int>('user_version'),
+          3,
+        );
+
+        final parent = await (migratedDatabase.select(
+          migratedDatabase.tasks,
+        )..where((task) => task.id.equals('parent-task'))).getSingle();
+        final child = await (migratedDatabase.select(
+          migratedDatabase.tasks,
+        )..where((task) => task.id.equals('child-task'))).getSingle();
+        expect(parent.title, 'Preserve parent task');
+        expect(parent.description, 'Task detail');
+        expect(parent.completed, isTrue);
+        expect(parent.createdAt, DateTime(2026, 8, 1, 9));
+        expect(parent.updatedAt, DateTime(2026, 8, 2, 10));
+        expect(parent.dueDate, DateTime(2026, 8, 5));
+        expect(parent.priority, 3);
+        expect(parent.category, 'Work');
+        expect(parent.goalId, 'dated-one');
+        expect(parent.parentTaskId, isNull);
+        expect(child.title, 'Preserve child task');
+        expect(child.completed, isFalse);
+        expect(child.createdAt, DateTime(2026, 8, 3));
+        expect(child.updatedAt, DateTime(2026, 8, 3));
+        expect(child.dueDate, isNull);
+        expect(child.priority, 2);
+        expect(child.category, isNull);
+        expect(child.goalId, 'dated-one');
+        expect(child.parentTaskId, 'parent-task');
+
+        await migratedDatabase.close();
+        database = null;
+        migratedDatabase = SystumDatabase.test(NativeDatabase(databaseFile));
+        database = migratedDatabase;
+        expect(
+          (await migratedDatabase.select(migratedDatabase.goals).get())
+              .singleWhere((goal) => goal.id == 'dated-one')
+              .targetDate,
+          expectedFirstDate,
+        );
+        expect(
+          (await migratedDatabase.select(migratedDatabase.tasks).get())
+              .singleWhere((task) => task.id == 'child-task')
+              .parentTaskId,
+          'parent-task',
+        );
+      } finally {
+        await database?.close();
+        await directory.delete(recursive: true);
+      }
+    },
+  );
 }
+
+int _toVersion2DateTime(DateTime dateTime) =>
+    dateTime.millisecondsSinceEpoch ~/ 1000;
 
 class _Version1Task {
   const _Version1Task({

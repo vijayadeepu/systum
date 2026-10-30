@@ -76,7 +76,7 @@ This project emphasizes:
 
 ## Current Status
 
-**Project Stage:** Task Execution Foundation
+**Project Stage:** Goal Management
 
 ### Completed
 
@@ -96,17 +96,21 @@ This project emphasizes:
 * Transactional parent deletion that promotes direct subtasks
 * Riverpod task state management and hierarchy UI
 * Goal progress calculation foundation
+* Goal list and goal detail screens
+* Goal creation, editing, and safe deletion UI
+* Task-to-goal assignment and removal flows
+* Derived goal lifecycle states (active, completed, overdue)
+* Target dates with local calendar-day handling
 * Repository, provider, and widget tests
 
 ### Next Milestones
 
-* Goal management and task-goal assignment UI
-* Goal progress presentation
 * Search & filtering
+* Focus sessions
 * Logging infrastructure
 * Global error handling
 * Settings infrastructure
-* Focus sessions
+* Dark theme
 
 ---
 
@@ -124,7 +128,10 @@ lib/
 ├── features/
 │   ├── goals/
 │   │   ├── models/
-│   │   └── repository/
+│   │   ├── providers/
+│   │   ├── repository/
+│   │   ├── screens/
+│   │   └── widgets/
 │   ├── home/
 │   └── tasks/
 │       ├── models/
@@ -133,7 +140,8 @@ lib/
 │       ├── screens/
 │       └── widgets/
 ├── shared/
-│   └── providers/
+│   ├── providers/
+│   └── utils/
 └── main.dart
 ```
 
@@ -237,11 +245,51 @@ Goal progress counts actionable leaf tasks only:
 The calculation lives in `GoalProgress` and is pure: it never mutates task
 data and is independent of widgets and timers.
 
+### Goal Lifecycle
+
+The lifecycle is derived, never stored. `GoalStatus` evaluates a goal from its
+`GoalProgress` and target date:
+
+* **Completed** — the goal has at least one actionable leaf task and all of
+  them are complete.
+* **Overdue** — the goal is incomplete, has remaining actionable work, and its
+  target calendar day is before today. Overdue means attention is needed, not
+  that the goal failed.
+* **Active** — every other incomplete goal, including goals with no target date
+  and empty goals past their target date. An empty goal has no outstanding work
+  to be overdue and is never considered complete automatically.
+
+Completion never writes completion to tasks. A goal becomes complete because
+its tasks are complete, and it becomes active again when a task is reopened.
+
+Goal target dates are stored as integer days from 1970-01-01. They represent
+calendar dates rather than instants, so formatting and overdue comparisons do
+not shift when the device timezone changes. Existing timestamp-based target
+dates are migrated by preserving the local calendar date they display in the
+timezone active during migration; the original timezone and intended date
+cannot be recovered from legacy values.
+
+### Goal Assignment and Deletion
+
+* A task may exist with or without a goal. Creating a task never requires a
+  goal.
+* A goal may exist with no tasks. Its detail screen remains actionable.
+* Only top-level tasks can be assigned to or removed from a goal. The
+  repository enforces this; the UI does not expose goal actions on subtasks.
+* Assigning or removing a parent's goal propagates atomically to its direct
+  subtasks.
+* Deleting a goal preserves every task. The `ON DELETE SET NULL` foreign key
+  clears the goal assignment; parent/subtask relationships are untouched.
+* The goal list and goal detail screens refresh task state after goal deletion,
+  and progress always derives from the canonical task provider.
+
 ## Known Limitations
 
-* There is no goal management or task-goal assignment UI yet.
-* Goal progress is calculated but not yet displayed.
+* There is no dark theme yet; the app currently ships a single light theme.
+* There is no dedicated full-screen task detail route. Tapping a task in a goal
+  opens the existing edit flow.
 * Focus sessions, search, filtering, and notifications are not implemented.
+* Goal ordering is newest-first; manual reordering is not implemented.
 
 ## Roadmap
 
@@ -264,17 +312,23 @@ data and is independent of widgets and timers.
 * [x] One-level subtasks and hierarchy UI
 * [x] Transactional child promotion on parent deletion
 * [x] Goal progress calculation
+* [x] Goal list and goal detail screens
+* [x] Goal create/edit/delete flows
+* [x] Task assignment and removal flows
+* [x] Goal lifecycle and target dates
 * [x] Repository, provider, and widget tests
 
 ### Current Focus
 
-* [ ] Goal management and assignment UI
-* [ ] Goal progress presentation
 * [ ] Search & filtering
+* [ ] Focus sessions
+* [ ] Dark theme
 
 ### Future
 
-* [ ] Focus sessions
+* [ ] Logging infrastructure
+* [ ] Global error handling
+* [ ] Settings infrastructure
 * [ ] Habit tracking
 * [ ] Dashboard
 * [ ] Productivity modules

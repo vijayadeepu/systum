@@ -56,6 +56,46 @@ void main() {
       expect(storedTask, isNull);
     });
 
+    test('insertInGoal assigns a new task atomically', () async {
+      final goal = await _insertGoal(database, id: 'goal-1');
+      final task = _buildTask(
+        id: 'goal-task',
+        description: 'Created from a goal',
+        dueDate: DateTime(2026, 8, 11),
+        priority: 3,
+      );
+
+      await repository.insertInGoal(task, goal.id);
+
+      final stored = await repository.getById(task.id);
+      expect(stored, isNotNull);
+      expect(stored?.goalId, goal.id);
+      expect(stored?.parentTaskId, isNull);
+      expect(Task.fromRow(stored!), equals(task));
+      expect((await repository.getByGoalId(goal.id)).single.id, task.id);
+    });
+
+    test(
+      'insertInGoal rejects a missing goal without creating a task',
+      () async {
+        final task = _buildTask(id: 'orphan');
+
+        await expectLater(
+          repository.insertInGoal(task, 'missing-goal'),
+          throwsA(
+            isA<TaskRelationshipException>().having(
+              (error) => error.message,
+              'message',
+              contains('missing-goal'),
+            ),
+          ),
+        );
+
+        expect(await repository.getById(task.id), isNull);
+        expect(await repository.getAll(), isEmpty);
+      },
+    );
+
     test(
       'getAll orders tasks by completed, priority, then createdAt',
       () async {

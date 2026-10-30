@@ -67,6 +67,22 @@ class TaskNotifier extends AsyncNotifier<List<TaskRow>> {
     return _mutate(() => _repository.createSubtask(subtask, parentTaskId));
   }
 
+  /// Creates a top-level task that belongs to [goalId] from the start.
+  Future<void> createTaskInGoal(Task task, String goalId) {
+    return _mutate(() => _repository.insertInGoal(task, goalId));
+  }
+
+  /// Assigns a top-level task and its direct subtasks to a goal. The
+  /// repository applies the atomic parent/child propagation rule.
+  Future<void> assignToGoal(String taskId, String goalId) {
+    return _mutate(() => _repository.assignToGoal(taskId, goalId));
+  }
+
+  /// Clears a top-level task's goal and the inherited goal of its subtasks.
+  Future<void> removeFromGoal(String taskId) {
+    return _mutate(() => _repository.removeFromGoal(taskId));
+  }
+
   /// Deletes a task. Direct subtasks of a parent are promoted to standalone
   /// tasks by the repository and the refreshed state reflects the promotion.
   Future<void> deleteTask(String id) {

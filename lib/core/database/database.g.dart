@@ -41,17 +41,15 @@ class $GoalsTable extends Goals with TableInfo<$GoalsTable, GoalRow> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _targetDateMeta = const VerificationMeta(
-    'targetDate',
-  );
   @override
-  late final GeneratedColumn<DateTime> targetDate = GeneratedColumn<DateTime>(
-    'target_date',
-    aliasedName,
-    true,
-    type: DriftSqlType.dateTime,
-    requiredDuringInsert: false,
-  );
+  late final GeneratedColumnWithTypeConverter<GoalDate?, int> targetDate =
+      GeneratedColumn<int>(
+        'target_date',
+        aliasedName,
+        true,
+        type: DriftSqlType.int,
+        requiredDuringInsert: false,
+      ).withConverter<GoalDate?>($GoalsTable.$convertertargetDaten);
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -117,12 +115,6 @@ class $GoalsTable extends Goals with TableInfo<$GoalsTable, GoalRow> {
         ),
       );
     }
-    if (data.containsKey('target_date')) {
-      context.handle(
-        _targetDateMeta,
-        targetDate.isAcceptableOrUnknown(data['target_date']!, _targetDateMeta),
-      );
-    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -160,9 +152,11 @@ class $GoalsTable extends Goals with TableInfo<$GoalsTable, GoalRow> {
         DriftSqlType.string,
         data['${effectivePrefix}description'],
       ),
-      targetDate: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}target_date'],
+      targetDate: $GoalsTable.$convertertargetDaten.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.int,
+          data['${effectivePrefix}target_date'],
+        ),
       ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
@@ -179,13 +173,18 @@ class $GoalsTable extends Goals with TableInfo<$GoalsTable, GoalRow> {
   $GoalsTable createAlias(String alias) {
     return $GoalsTable(attachedDatabase, alias);
   }
+
+  static TypeConverter<GoalDate, int> $convertertargetDate =
+      const GoalDateConverter();
+  static TypeConverter<GoalDate?, int?> $convertertargetDaten =
+      NullAwareTypeConverter.wrap($convertertargetDate);
 }
 
 class GoalRow extends DataClass implements Insertable<GoalRow> {
   final String id;
   final String title;
   final String? description;
-  final DateTime? targetDate;
+  final GoalDate? targetDate;
   final DateTime createdAt;
   final DateTime updatedAt;
   const GoalRow({
@@ -205,7 +204,9 @@ class GoalRow extends DataClass implements Insertable<GoalRow> {
       map['description'] = Variable<String>(description);
     }
     if (!nullToAbsent || targetDate != null) {
-      map['target_date'] = Variable<DateTime>(targetDate);
+      map['target_date'] = Variable<int>(
+        $GoalsTable.$convertertargetDaten.toSql(targetDate),
+      );
     }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
@@ -236,7 +237,7 @@ class GoalRow extends DataClass implements Insertable<GoalRow> {
       id: serializer.fromJson<String>(json['id']),
       title: serializer.fromJson<String>(json['title']),
       description: serializer.fromJson<String?>(json['description']),
-      targetDate: serializer.fromJson<DateTime?>(json['targetDate']),
+      targetDate: serializer.fromJson<GoalDate?>(json['targetDate']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -248,7 +249,7 @@ class GoalRow extends DataClass implements Insertable<GoalRow> {
       'id': serializer.toJson<String>(id),
       'title': serializer.toJson<String>(title),
       'description': serializer.toJson<String?>(description),
-      'targetDate': serializer.toJson<DateTime?>(targetDate),
+      'targetDate': serializer.toJson<GoalDate?>(targetDate),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -258,7 +259,7 @@ class GoalRow extends DataClass implements Insertable<GoalRow> {
     String? id,
     String? title,
     Value<String?> description = const Value.absent(),
-    Value<DateTime?> targetDate = const Value.absent(),
+    Value<GoalDate?> targetDate = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
   }) => GoalRow(
@@ -316,7 +317,7 @@ class GoalsCompanion extends UpdateCompanion<GoalRow> {
   final Value<String> id;
   final Value<String> title;
   final Value<String?> description;
-  final Value<DateTime?> targetDate;
+  final Value<GoalDate?> targetDate;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<int> rowid;
@@ -345,7 +346,7 @@ class GoalsCompanion extends UpdateCompanion<GoalRow> {
     Expression<String>? id,
     Expression<String>? title,
     Expression<String>? description,
-    Expression<DateTime>? targetDate,
+    Expression<int>? targetDate,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<int>? rowid,
@@ -365,7 +366,7 @@ class GoalsCompanion extends UpdateCompanion<GoalRow> {
     Value<String>? id,
     Value<String>? title,
     Value<String?>? description,
-    Value<DateTime?>? targetDate,
+    Value<GoalDate?>? targetDate,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<int>? rowid,
@@ -394,7 +395,9 @@ class GoalsCompanion extends UpdateCompanion<GoalRow> {
       map['description'] = Variable<String>(description.value);
     }
     if (targetDate.present) {
-      map['target_date'] = Variable<DateTime>(targetDate.value);
+      map['target_date'] = Variable<int>(
+        $GoalsTable.$convertertargetDaten.toSql(targetDate.value),
+      );
     }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
@@ -1139,7 +1142,7 @@ typedef $$GoalsTableCreateCompanionBuilder =
       required String id,
       required String title,
       Value<String?> description,
-      Value<DateTime?> targetDate,
+      Value<GoalDate?> targetDate,
       required DateTime createdAt,
       required DateTime updatedAt,
       Value<int> rowid,
@@ -1149,7 +1152,7 @@ typedef $$GoalsTableUpdateCompanionBuilder =
       Value<String> id,
       Value<String> title,
       Value<String?> description,
-      Value<DateTime?> targetDate,
+      Value<GoalDate?> targetDate,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<int> rowid,
@@ -1203,10 +1206,11 @@ class $$GoalsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<DateTime> get targetDate => $composableBuilder(
-    column: $table.targetDate,
-    builder: (column) => ColumnFilters(column),
-  );
+  ColumnWithTypeConverterFilters<GoalDate?, GoalDate, int> get targetDate =>
+      $composableBuilder(
+        column: $table.targetDate,
+        builder: (column) => ColumnWithTypeConverterFilters(column),
+      );
 
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
@@ -1268,7 +1272,7 @@ class $$GoalsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<DateTime> get targetDate => $composableBuilder(
+  ColumnOrderings<int> get targetDate => $composableBuilder(
     column: $table.targetDate,
     builder: (column) => ColumnOrderings(column),
   );
@@ -1304,10 +1308,11 @@ class $$GoalsTableAnnotationComposer
     builder: (column) => column,
   );
 
-  GeneratedColumn<DateTime> get targetDate => $composableBuilder(
-    column: $table.targetDate,
-    builder: (column) => column,
-  );
+  GeneratedColumnWithTypeConverter<GoalDate?, int> get targetDate =>
+      $composableBuilder(
+        column: $table.targetDate,
+        builder: (column) => column,
+      );
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -1372,7 +1377,7 @@ class $$GoalsTableTableManager
                 Value<String> id = const Value.absent(),
                 Value<String> title = const Value.absent(),
                 Value<String?> description = const Value.absent(),
-                Value<DateTime?> targetDate = const Value.absent(),
+                Value<GoalDate?> targetDate = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -1390,7 +1395,7 @@ class $$GoalsTableTableManager
                 required String id,
                 required String title,
                 Value<String?> description = const Value.absent(),
-                Value<DateTime?> targetDate = const Value.absent(),
+                Value<GoalDate?> targetDate = const Value.absent(),
                 required DateTime createdAt,
                 required DateTime updatedAt,
                 Value<int> rowid = const Value.absent(),

@@ -4,6 +4,7 @@ import 'package:drift/drift.dart' show Value, driftRuntimeOptions;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:systum/core/database/database.dart';
+import 'package:systum/features/goals/models/goal_date.dart';
 import 'package:systum/features/goals/repository/goal_repository.dart';
 
 void main() {
@@ -59,6 +60,41 @@ void main() {
       expect(goals, hasLength(2));
     });
 
+    test(
+      'getAll returns newest goals first with a deterministic tiebreak',
+      () async {
+        final older = _buildGoal(
+          id: 'older',
+          title: 'Older',
+          createdAt: DateTime(2026, 8, 1, 8),
+          updatedAt: DateTime(2026, 8, 1, 8),
+        );
+        final newerB = _buildGoal(
+          id: 'b-newer',
+          title: 'Newer B',
+          createdAt: DateTime(2026, 8, 2, 8),
+          updatedAt: DateTime(2026, 8, 2, 8),
+        );
+        final newerA = _buildGoal(
+          id: 'a-newer',
+          title: 'Newer A',
+          createdAt: DateTime(2026, 8, 2, 8),
+          updatedAt: DateTime(2026, 8, 2, 8),
+        );
+        await repository.create(older);
+        await repository.create(newerB);
+        await repository.create(newerA);
+
+        final goals = await repository.getAll();
+
+        expect(goals.map((goal) => goal.id).toList(), [
+          'a-newer',
+          'b-newer',
+          'older',
+        ]);
+      },
+    );
+
     test('getById returns null when the goal does not exist', () async {
       expect(await repository.getById('missing-goal'), isNull);
     });
@@ -69,13 +105,37 @@ void main() {
       final updatedGoal = goal.copyWith(
         title: 'Updated goal',
         description: const Value('Updated description'),
-        targetDate: Value(DateTime(2026, 9, 1)),
+        targetDate: Value(GoalDate.fromDateTime(DateTime(2026, 9, 1))),
         updatedAt: DateTime(2026, 8, 2),
       );
 
       await repository.update(updatedGoal);
 
       expect(await repository.getById(goal.id), equals(updatedGoal));
+    });
+
+    test('update can clear nullable fields', () async {
+      final goal = _buildGoal(
+        description: 'Remove me',
+        targetDate: DateTime(2026, 9, 1),
+      );
+      await repository.create(goal);
+
+      await repository.update(
+        goal.copyWith(
+          description: const Value(null),
+          targetDate: const Value(null),
+          updatedAt: DateTime(2026, 8, 5),
+        ),
+      );
+
+      final stored = await repository.getById(goal.id);
+      expect(stored, isNotNull);
+      expect(stored?.description, isNull);
+      expect(stored?.targetDate, isNull);
+      expect(stored?.title, goal.title);
+      expect(stored?.createdAt, goal.createdAt);
+      expect(stored?.updatedAt, DateTime(2026, 8, 5));
     });
 
     test(
@@ -151,6 +211,53 @@ void main() {
       expect(await repository.getAll(), isEmpty);
     });
 
+    test(
+      'deleting a goal preserves a parent, its subtask and their hierarchy',
+      () async {
+        final goal = _buildGoal();
+        await repository.create(goal);
+        final now = DateTime(2026, 8, 3, 10);
+        await database
+            .into(database.tasks)
+            .insert(
+              TasksCompanion.insert(
+                id: 'parent',
+                title: 'Parent task',
+                createdAt: now,
+                updatedAt: now,
+                goalId: Value(goal.id),
+              ),
+            );
+        await database
+            .into(database.tasks)
+            .insert(
+              TasksCompanion.insert(
+                id: 'child',
+                title: 'Child task',
+                createdAt: now,
+                updatedAt: now,
+                goalId: Value(goal.id),
+                parentTaskId: const Value('parent'),
+              ),
+            );
+
+        await repository.delete(goal.id);
+
+        final parent = await (database.select(
+          database.tasks,
+        )..where((tasks) => tasks.id.equals('parent'))).getSingle();
+        final child = await (database.select(
+          database.tasks,
+        )..where((tasks) => tasks.id.equals('child'))).getSingle();
+        expect(parent.goalId, isNull);
+        expect(child.goalId, isNull);
+        expect(parent.parentTaskId, isNull);
+        expect(child.parentTaskId, 'parent');
+        expect(parent.title, 'Parent task');
+        expect(child.title, 'Child task');
+      },
+    );
+
     test('create propagates duplicate ID failures', () async {
       final goal = _buildGoal();
       await repository.create(goal);
@@ -190,6 +297,12 @@ void main() {
       final storedGoal = await GoalRepository(fileDatabase).getById(goal.id);
 
       expect(storedGoal, equals(goal));
+      final rawTargetDate = await fileDatabase
+          .customSelect(
+            "SELECT target_date FROM goals WHERE id = 'persistent-goal'",
+          )
+          .getSingle();
+      expect(rawTargetDate.read<int>('target_date'), goal.targetDate!.epochDay);
     } finally {
       try {
         await fileDatabase?.close();
@@ -212,7 +325,7 @@ GoalRow _buildGoal({
     id: id,
     title: title,
     description: description,
-    targetDate: targetDate ?? DateTime(2026, 9, 1),
+    targetDate: GoalDate.fromDateTime(targetDate ?? DateTime(2026, 9, 1)),
     createdAt: createdAt ?? DateTime(2026, 8, 1, 8),
     updatedAt: updatedAt ?? DateTime(2026, 8, 1, 8),
   );

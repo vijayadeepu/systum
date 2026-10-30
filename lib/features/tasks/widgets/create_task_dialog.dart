@@ -1,10 +1,10 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../shared/utils/date_format.dart';
+import '../../../shared/utils/id_generator.dart';
 import '../models/task.dart';
 
 class CreateTaskDialog extends StatefulWidget {
@@ -89,7 +89,7 @@ class _CreateTaskDialogState extends State<CreateTaskDialog> {
     final existingTask = widget.task;
     final task = existingTask == null
         ? Task(
-            id: _generateTaskId(),
+            id: generateId(),
             title: title,
             description: description,
             createdAt: now,
@@ -226,21 +226,4 @@ class _CreateTaskDialogState extends State<CreateTaskDialog> {
   }
 }
 
-String _formatDate(DateTime date) =>
-    '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-
-String _generateTaskId() {
-  final random = Random.secure();
-  final bytes = List<int>.generate(16, (_) => random.nextInt(256));
-
-  bytes[6] = (bytes[6] & 0x0f) | 0x40;
-  bytes[8] = (bytes[8] & 0x3f) | 0x80;
-
-  final hex = bytes
-      .map((byte) => byte.toRadixString(16).padLeft(2, '0'))
-      .join();
-
-  return '${hex.substring(0, 8)}-${hex.substring(8, 12)}-'
-      '${hex.substring(12, 16)}-${hex.substring(16, 20)}-'
-      '${hex.substring(20)}';
-}
+String _formatDate(DateTime date) => formatDate(date);

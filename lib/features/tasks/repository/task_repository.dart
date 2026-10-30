@@ -31,6 +31,25 @@ class TaskRepository {
     await _database.into(_database.tasks).insert(task.toCompanion());
   }
 
+  /// Inserts [task] and assigns it to [goalId] in one transaction.
+  ///
+  /// This is the create-from-goal path. Unlike [assignToGoal], it is atomic:
+  /// a missing goal rolls the insert back instead of leaving a standalone task.
+  Future<void> insertInGoal(Task task, String goalId) async {
+    await _database.transaction(() async {
+      final goal = await (_database.select(
+        _database.goals,
+      )..where((goals) => goals.id.equals(goalId))).getSingleOrNull();
+      if (goal == null) {
+        throw TaskRelationshipException('Goal "$goalId" does not exist.');
+      }
+
+      await _database
+          .into(_database.tasks)
+          .insert(task.toCompanion().copyWith(goalId: Value(goalId)));
+    });
+  }
+
   Future<void> update(Task task) async {
     final updated = await _database
         .update(_database.tasks)
