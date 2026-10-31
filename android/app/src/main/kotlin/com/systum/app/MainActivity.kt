@@ -1,4 +1,4 @@
-package com.example.systum
+package com.systum.app
 
 import io.flutter.embedding.android.FlutterActivity
 

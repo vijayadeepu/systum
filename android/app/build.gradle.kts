@@ -1,11 +1,22 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+val releaseKeyPropertiesFile = rootProject.file("key.properties")
+val releaseKeyProperties = Properties()
+if (releaseKeyPropertiesFile.exists()) {
+    releaseKeyPropertiesFile.inputStream().use { stream ->
+        releaseKeyProperties.load(stream)
+    }
+}
+val releaseSigningConfigured = releaseKeyPropertiesFile.exists()
+
 android {
-    namespace = "com.example.systum"
+    namespace = "com.systum.app"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -16,7 +27,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.systum"
+        applicationId = "com.systum.app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
@@ -25,10 +36,25 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        // A deliberately invalid path keeps release builds fail-closed when
+        // the owner has not supplied a private keystore. Debug builds remain
+        // available with their normal debug signing configuration.
+        create("release") {
+            if (releaseSigningConfigured) {
+                storeFile = file(releaseKeyProperties.getProperty("storeFile"))
+                storePassword = releaseKeyProperties.getProperty("storePassword")
+                keyAlias = releaseKeyProperties.getProperty("keyAlias")
+                keyPassword = releaseKeyProperties.getProperty("keyPassword")
+            } else {
+                storeFile = file("missing-release-keystore.jks")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // Configure a private release keystore before producing a
-            // distributable APK. Never sign a release with the debug key.
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 }

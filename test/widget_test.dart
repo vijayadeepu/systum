@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:systum/app/app.dart';
+import 'package:systum/core/backup/backup_provider.dart';
 import 'package:systum/core/database/database.dart';
 import 'package:systum/shared/providers/database_provider.dart';
 
@@ -99,6 +100,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          backupRecoveryProvider.overrideWith((ref) async {}),
           databaseProvider.overrideWithValue(
             SystumDatabase.test(_FakeQueryExecutor()),
           ),

@@ -61,6 +61,11 @@ class TaskListPage extends ConsumerWidget {
             onPressed: () => context.push('/focus/history'),
             icon: const Icon(Icons.history_rounded),
           ),
+          IconButton(
+            tooltip: 'Backup and restore',
+            onPressed: () => context.push('/backup'),
+            icon: const Icon(Icons.shield_outlined),
+          ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(

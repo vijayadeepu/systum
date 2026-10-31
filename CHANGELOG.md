@@ -2,6 +2,18 @@
 
 Notable changes to Systum are recorded here.
 
+## Unreleased
+
+### Added
+
+- Versioned local backup export/import for tasks, goals, focus sessions,
+  intervals, task hierarchy, and Pomodoro settings.
+- Pre-restore validation and explicit destructive-replace confirmation.
+- Backup integrity checks for relationships, task hierarchy cycles, and focus
+  session interval invariants.
+- Durable restore journal and startup reconciliation for interrupted
+  SQLite/SharedPreferences restores.
+
 ## 0.1.0 — 2026-10-31 — Early Access preparation
 
 ### Added
@@ -26,10 +38,11 @@ Notable changes to Systum are recorded here.
   sessions in the completed-session total.
 - Aggregation splits intervals at local midnight and rejects overlaps across
   sessions.
-- Android release builds no longer use the debug signing key. A private
-  release signing configuration is still required before distribution.
+- Android release builds use a fail-closed signing configuration that reads the
+  owner-managed ignored `android/key.properties`; a private release keystore is
+  still required before distribution.
 
 ### Limitations
 
 - Android device-level restart validation and release signing are pending.
-- The Android application ID is still `com.example.systum`.
+- The Android application ID is `com.systum.app`.

@@ -86,16 +86,26 @@ This project emphasizes:
   persisted session history
 * Focus time aggregation from persisted intervals, including local-day splits,
   task snapshots, interruption policy, and overlap validation
+* Versioned local backup and restore for SQLite data and Pomodoro settings
+* Backup validation for malformed documents, relationships, task cycles, and
+  focus interval invariants
+* Durable restore recovery journal with startup reconciliation across SQLite
+  and SharedPreferences
 
 ### Current limitations
 
 * Focus history is currently loaded as one indexed local query; pagination has
   not been added because no measured query problem exists yet.
 * Search, filtering, and manual ordering are not implemented.
+* Automatic backup rotation and retention are not implemented; backups are
+  manual and user-controlled.
+* SQLite and SharedPreferences remain separate persistence systems. Restore
+  uses a durable journal and startup reconciliation to guarantee that an
+  interrupted restore is not reported as complete; it does not provide a
+  single cross-store atomic commit.
 * Android release signing must be configured with a private key by the release
   owner. The repository does not contain signing credentials.
-* The Android application ID remains `com.example.systum`; changing it requires
-  an explicit product decision before public distribution.
+* The permanent Android application ID is `com.systum.app`.
 
 ---
 
@@ -108,6 +118,7 @@ lib/
 │   ├── bootstrap.dart
 │   └── router.dart
 ├── core/
+│   ├── backup/
 │   ├── database/
 │   └── theme/
 ├── features/
@@ -186,7 +197,7 @@ needed, for example `flutter run -d linux` or `flutter run -d <android-device>`.
 
 ### Android builds and installation
 
-The Android application ID is `com.example.systum`, the displayed app name is
+The Android application ID is `com.systum.app`, the displayed app name is
 `Systum`, the launcher icon follows the app's blue theme, and the current
 version is `0.1.0+1`. Minimum and target SDK values follow the installed Flutter
 SDK defaults in `android/app/build.gradle.kts` (min SDK 24, target SDK 36 with
@@ -222,14 +233,16 @@ keytool -genkeypair -v -keystore /absolute/path/to/systum-release.jks \
   -keyalg RSA -keysize 2048 -validity 10000 -alias <key-alias>
 ```
 
-In
-`android/app/build.gradle.kts`, load `android/key.properties` into a
-`java.util.Properties`, use its values to set `storeFile`, `storePassword`,
-`keyAlias`, and `keyPassword` in `signingConfigs.create("release")`, and assign
-`signingConfigs.getByName("release")` to the `release` build type. Keep both
-the keystore and properties file out of source control. The repository
-currently has no signing credentials or release config, so do not treat a
-debug-signed or unsigned APK as a release.
+The checked-in Gradle configuration loads these values automatically and
+assigns them only to the release build type. Keep both the keystore and
+properties file out of source control. If `android/key.properties` is absent,
+release builds fail closed instead of falling back to debug signing. The
+repository currently has no signing credentials, so a release APK cannot yet
+be produced.
+
+Back up the keystore and its passwords in separate encrypted, access-controlled
+locations. The same keystore must be retained for every future compatible app
+update; losing it prevents Android upgrades for existing users.
 After configuring signing, build with:
 
 ```bash
@@ -253,6 +266,14 @@ flutter test test/features/tasks/providers/task_provider_test.dart
 ```
 
 All commands should complete successfully before contributing changes.
+
+### Local backup and restore
+
+Open **Backup and restore** from the Tasks toolbar. Export creates a versioned
+JSON file through the platform file picker. Import validates the complete file
+before showing an explicit replace-data confirmation; current data is not
+modified when validation fails or the dialog is cancelled. Backups remain on
+the device or destination chosen by the user and are never uploaded by Systum.
 
 ---
 

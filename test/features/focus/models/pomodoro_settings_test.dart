@@ -18,23 +18,23 @@ void main() {
       longBreakMinutes: 20,
     );
 
-    expect(settings.focusDurationMs, const Duration(minutes: 50).inMilliseconds);
+    expect(
+      settings.focusDurationMs,
+      const Duration(minutes: 50).inMilliseconds,
+    );
     expect(
       settings.shortBreakDurationMs,
       const Duration(minutes: 10).inMilliseconds,
     );
-    expect(settings.longBreakDurationMs, const Duration(minutes: 20).inMilliseconds);
+    expect(
+      settings.longBreakDurationMs,
+      const Duration(minutes: 20).inMilliseconds,
+    );
   });
 
   test('rejects zero, negative, and unreasonable durations', () {
     expect(() => PomodoroSettings(focusMinutes: 0), throwsArgumentError);
-    expect(
-      () => PomodoroSettings(shortBreakMinutes: -1),
-      throwsArgumentError,
-    );
-    expect(
-      () => PomodoroSettings(longBreakMinutes: 1441),
-      throwsArgumentError,
-    );
+    expect(() => PomodoroSettings(shortBreakMinutes: -1), throwsArgumentError);
+    expect(() => PomodoroSettings(longBreakMinutes: 1441), throwsArgumentError);
   });
 }

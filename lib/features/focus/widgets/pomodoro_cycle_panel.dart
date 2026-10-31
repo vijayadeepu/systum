@@ -14,8 +14,7 @@ class PomodoroCyclePanel extends ConsumerStatefulWidget {
   final PomodoroCycleState cycle;
 
   @override
-  ConsumerState<PomodoroCyclePanel> createState() =>
-      _PomodoroCyclePanelState();
+  ConsumerState<PomodoroCyclePanel> createState() => _PomodoroCyclePanelState();
 }
 
 class _PomodoroCyclePanelState extends ConsumerState<PomodoroCyclePanel> {
@@ -171,7 +170,8 @@ class _PomodoroCyclePanelState extends ConsumerState<PomodoroCyclePanel> {
     FocusSessionMode.pomodoro => 'Focus',
     FocusSessionMode.shortBreak => 'Short break',
     FocusSessionMode.longBreak => 'Long break',
-    FocusSessionMode.standard || FocusSessionMode.custom =>
-      throw StateError('Unsupported Pomodoro segment mode: $mode'),
+    FocusSessionMode.standard || FocusSessionMode.custom => throw StateError(
+      'Unsupported Pomodoro segment mode: $mode',
+    ),
   };
 }

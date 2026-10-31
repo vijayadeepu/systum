@@ -5,6 +5,7 @@ import '../features/goals/screens/goal_list_page.dart';
 import '../features/focus/screens/focus_page.dart';
 import '../features/focus/screens/focus_history_page.dart';
 import '../features/home/home_page.dart';
+import '../core/backup/backup_page.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/',
@@ -19,6 +20,7 @@ final appRouter = GoRouter(
       path: '/focus/history',
       builder: (context, state) => const FocusHistoryPage(),
     ),
+    GoRoute(path: '/backup', builder: (context, state) => const BackupPage()),
     GoRoute(path: '/goals', builder: (context, state) => const GoalListPage()),
     GoRoute(
       path: '/goal/:goalId',

@@ -64,4 +64,52 @@ class PomodoroSettingsStore {
     );
     if (!saved) throw StateError('Could not exit the Pomodoro cycle.');
   }
+
+  Future<Map<String, dynamic>> exportData() async {
+    final preferences = await SharedPreferences.getInstance();
+    final settings = await load();
+    return {
+      'pomodoroSettings': {
+        'focusMinutes': settings.focusMinutes,
+        'shortBreakMinutes': settings.shortBreakMinutes,
+        'longBreakMinutes': settings.longBreakMinutes,
+      },
+      'dismissedCycleIds':
+          (preferences.getString(_dismissedCyclesKey) == null
+                ? <String>[]
+                : (await loadDismissedCycleIds()).toList()
+            ..sort()),
+    };
+  }
+
+  Future<void> importData(Map<String, dynamic> data) async {
+    final settingsData = data['pomodoroSettings'];
+    final dismissedData = data['dismissedCycleIds'];
+    if (settingsData is! Map<String, dynamic> ||
+        dismissedData is! List<dynamic> ||
+        dismissedData.any((value) => value is! String)) {
+      throw const FormatException('Pomodoro backup data is invalid.');
+    }
+    final settings = PomodoroSettings(
+      focusMinutes: settingsData['focusMinutes'] as int,
+      shortBreakMinutes: settingsData['shortBreakMinutes'] as int,
+      longBreakMinutes: settingsData['longBreakMinutes'] as int,
+    );
+    final preferences = await SharedPreferences.getInstance();
+    final settingsSaved = await preferences.setString(
+      _settingsKey,
+      jsonEncode({
+        'focusMinutes': settings.focusMinutes,
+        'shortBreakMinutes': settings.shortBreakMinutes,
+        'longBreakMinutes': settings.longBreakMinutes,
+      }),
+    );
+    final dismissedSaved = await preferences.setString(
+      _dismissedCyclesKey,
+      jsonEncode(dismissedData.cast<String>()..sort()),
+    );
+    if (!settingsSaved || !dismissedSaved) {
+      throw StateError('Could not restore Pomodoro settings.');
+    }
+  }
 }
