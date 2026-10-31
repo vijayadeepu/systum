@@ -11,6 +11,7 @@ class SystumApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final recovery = ref.watch(backupRecoveryProvider);
+    ref.watch(exportRecoveryProvider);
     if (recovery.isLoading) {
       return MaterialApp(
         title: 'Systum',
@@ -30,7 +31,10 @@ class SystumApp extends ConsumerWidget {
         themeMode: ThemeMode.system,
         home: _RecoveryErrorPage(
           error: recovery.error!,
-          onRetry: () => ref.invalidate(backupRecoveryProvider),
+          onRetry: () {
+            ref.invalidate(backupRecoveryProvider);
+            ref.invalidate(exportRecoveryProvider);
+          },
         ),
       );
     }

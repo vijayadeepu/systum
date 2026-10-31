@@ -275,6 +275,30 @@ before showing an explicit replace-data confirmation; current data is not
 modified when validation fails or the dialog is cancelled. Backups remain on
 the device or destination chosen by the user and are never uploaded by Systum.
 
+New version-1 backups include an integrity envelope with the application
+version, completion state, UTF-8 payload length, and SHA-256 checksum. The
+checksum covers canonical UTF-8 JSON containing exactly `data` and
+`preferences`; object keys are recursively sorted, list order is preserved,
+and JSON number, null, Unicode, and escaping behavior follows Dart's JSON
+encoder. The envelope timestamp is not part of the checksum. Existing version
+1 backups without integrity metadata remain importable as legacy/unverified.
+SHA-256 detects corruption or modification but does not authenticate the
+creator or encrypt the exported file.
+
+Exports are generated and verified in app-private staging storage before the
+platform document provider is asked to publish them. Systum reports three
+verification levels: staging verified, destination write accepted, and
+destination verified after readback. Some Android document providers accept a
+write but do not expose a reopenable path, so destination verification and
+atomic replacement cannot be guaranteed universally. Interrupted staging and
+publication operations are journaled separately from restore operations;
+startup verifies retained staging files and removes only strictly-owned
+abandoned `.staging` files. On Android, Systum uses the platform
+`ACTION_CREATE_DOCUMENT` Storage Access Framework flow because the supported
+`file_selector_android` version does not implement save-document selection.
+When a verified staged backup is retained after interruption, the next export
+action can resume publication after the user selects a destination.
+
 ---
 
 ## Task Hierarchy and Goal Rules

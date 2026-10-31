@@ -31,9 +31,170 @@ void main() {
 
     expect(document['format'], BackupService.format);
     expect(document['version'], BackupService.currentVersion);
+    expect(document['appVersion'], BackupService.appVersion);
+    expect(document['exportState'], 'complete');
+    expect(document['payloadEncoding'], BackupService.payloadEncoding);
+    expect(document['payloadHashAlgorithm'], BackupService.integrityAlgorithm);
+    expect(document['payloadLengthBytes'], isA<int>());
+    expect(document['payloadSha256'], hasLength(64));
     expect((document['data'] as Map)['tasks'], isEmpty);
-    await service.validate(encoded);
+    final validation = await service.validate(encoded);
+    expect(validation.status, BackupVerificationStatus.verified);
   });
+
+  test('checksum is deterministic regardless of envelope timestamp', () async {
+    final first = await service.createBackup();
+    final second = await BackupService(
+      database,
+      PomodoroSettingsStore(),
+      clock: () => DateTime.utc(2030, 1, 1),
+    ).createBackup();
+    final firstDocument = jsonDecode(first) as Map<String, dynamic>;
+    final secondDocument = jsonDecode(second) as Map<String, dynamic>;
+
+    expect(
+      firstDocument['createdAtUtc'],
+      isNot(secondDocument['createdAtUtc']),
+    );
+    expect(firstDocument['payloadSha256'], secondDocument['payloadSha256']);
+    expect(
+      firstDocument['payloadLengthBytes'],
+      secondDocument['payloadLengthBytes'],
+    );
+  });
+
+  test('rejects corrupted integrity metadata and payload', () async {
+    final base =
+        jsonDecode(await service.createBackup()) as Map<String, dynamic>;
+    for (final mutation in <void Function(Map<String, dynamic>)>[
+      (document) => document['payloadSha256'] = '0' * 64,
+      (document) => document['payloadLengthBytes'] =
+          (document['payloadLengthBytes'] as int) + 1,
+      (document) => document['payloadHashAlgorithm'] = 'sha512',
+      (document) => document.remove('exportState'),
+      (document) => document.remove('payloadSha256'),
+    ]) {
+      final mutated = jsonDecode(jsonEncode(base)) as Map<String, dynamic>;
+      mutation(mutated);
+      await expectLater(
+        service.validate(jsonEncode(mutated)),
+        throwsA(isA<BackupValidationException>()),
+      );
+    }
+  });
+
+  test('integrity failure does not mutate persistent data', () async {
+    final now = DateTime.utc(2026, 1, 1);
+    await database
+        .into(database.tasks)
+        .insert(
+          TasksCompanion.insert(
+            id: 'existing',
+            title: 'Keep me',
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+    final mutated =
+        jsonDecode(await service.createBackup()) as Map<String, dynamic>;
+    final tasks = mutated['data'] as Map<String, dynamic>;
+    (tasks['tasks'] as List).single['title'] = 'Tampered';
+
+    await expectLater(
+      service.validate(jsonEncode(mutated)),
+      throwsA(isA<BackupValidationException>()),
+    );
+    expect(
+      (await database.select(database.tasks).get()).single.title,
+      'Keep me',
+    );
+  });
+
+  test(
+    'restore rejects an integrity failure before creating a journal',
+    () async {
+      final now = DateTime.utc(2026, 1, 1);
+      await database
+          .into(database.tasks)
+          .insert(
+            TasksCompanion.insert(
+              id: 'existing',
+              title: 'Keep me',
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
+      final mutated =
+          jsonDecode(await service.createBackup()) as Map<String, dynamic>;
+      (mutated['data'] as Map<String, dynamic>)['tasks'] = [
+        {
+          'id': 'replacement',
+          'title': 'Replacement',
+          'description': null,
+          'completed': false,
+          'createdAtMs': 0,
+          'updatedAtMs': 0,
+          'dueDateMs': null,
+          'priority': 0,
+          'category': null,
+          'goalId': null,
+          'parentTaskId': null,
+        },
+      ];
+
+      await expectLater(
+        service.restore(jsonEncode(mutated), overwriteExisting: true),
+        throwsA(isA<BackupValidationException>()),
+      );
+      expect(
+        (await database.select(database.tasks).get()).single.id,
+        'existing',
+      );
+    },
+  );
+
+  test('accepts legacy v1 backups as unverified', () async {
+    final legacy =
+        jsonDecode(await service.createBackup()) as Map<String, dynamic>;
+    for (final key in [
+      'appVersion',
+      'exportState',
+      'payloadEncoding',
+      'payloadHashAlgorithm',
+      'payloadLengthBytes',
+      'payloadSha256',
+    ]) {
+      legacy.remove(key);
+    }
+
+    final result = await service.validate(jsonEncode(legacy));
+    expect(result.status, BackupVerificationStatus.legacyUnverified);
+  });
+
+  test(
+    'canonical payload remains stable for unicode and escaped text',
+    () async {
+      final now = DateTime.utc(2026, 1, 1);
+      await database
+          .into(database.tasks)
+          .insert(
+            TasksCompanion.insert(
+              id: 'unicode',
+              title: 'Résumé 🚀 \\"quoted\\"',
+              description: const Value('नमस्ते\n世界'),
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
+      final first =
+          jsonDecode(await service.createBackup()) as Map<String, dynamic>;
+      final second =
+          jsonDecode(await service.createBackup()) as Map<String, dynamic>;
+
+      expect(first['payloadSha256'], second['payloadSha256']);
+      await service.validate(jsonEncode(first));
+    },
+  );
 
   test('round trips goals, hierarchy, focus intervals, and settings', () async {
     final now = DateTime.utc(2026, 1, 1, 10);

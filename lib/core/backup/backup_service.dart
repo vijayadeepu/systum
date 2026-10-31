@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:crypto/crypto.dart';
+
 import '../../features/focus/models/focus_session.dart';
 import '../../features/focus/models/focus_session_interval.dart';
 import '../../features/focus/models/focus_session_mode.dart';
@@ -10,6 +12,17 @@ import '../../features/focus/repository/pomodoro_settings_store.dart';
 import '../../features/goals/models/goal_date.dart';
 import '../../core/database/database.dart';
 import 'restore_journal.dart';
+
+/// Whether a structurally valid backup has verifiable payload integrity.
+enum BackupVerificationStatus { verified, legacyUnverified }
+
+final class BackupValidationResult {
+  const BackupValidationResult(this.status);
+
+  final BackupVerificationStatus status;
+
+  bool get isVerified => status == BackupVerificationStatus.verified;
+}
 
 /// Versioned, local-only export and restore for all user-owned Systum data.
 final class BackupService {
@@ -25,6 +38,9 @@ final class BackupService {
 
   static const format = 'systum-backup';
   static const currentVersion = 1;
+  static const appVersion = '0.1.0+1';
+  static const payloadEncoding = 'utf-8-json';
+  static const integrityAlgorithm = 'sha256';
 
   final SystumDatabase _database;
   final PomodoroSettingsStore _settingsStore;
@@ -50,20 +66,33 @@ final class BackupService {
       };
     });
     final preferences = await _settingsStore.exportData();
-    return const JsonEncoder.withIndent('  ').convert({
+    final payload = _canonicalPayload(data: data, preferences: preferences);
+    final payloadBytes = utf8.encode(payload);
+    final document = {
       'format': format,
       'version': currentVersion,
+      'appVersion': appVersion,
       'createdAtUtc': _clock().toUtc().toIso8601String(),
       'databaseSchemaVersion': _schemaVersion,
+      'exportState': 'complete',
+      'payloadEncoding': payloadEncoding,
+      'payloadHashAlgorithm': integrityAlgorithm,
+      'payloadLengthBytes': payloadBytes.length,
+      'payloadSha256': sha256.convert(payloadBytes).toString(),
       'data': data,
       'preferences': preferences,
-    });
+    };
+    final encoded = const JsonEncoder.withIndent('  ').convert(document);
+    // Validate generated output through the same path used by imports.
+    await validate(encoded);
+    return encoded;
   }
 
   /// Validates the complete document without touching the current database.
-  Future<void> validate(String encoded) async {
+  Future<BackupValidationResult> validate(String encoded) async {
     final document = _decode(encoded);
     _validateRows(document);
+    return BackupValidationResult(_verifyIntegrity(document));
   }
 
   /// Replaces local data only after the caller has obtained explicit consent.
@@ -79,6 +108,7 @@ final class BackupService {
     }
     final document = _decode(encoded);
     final rows = _validateRows(document);
+    _verifyIntegrity(document);
     final pending = await _journalStore.load();
     if (pending != null) {
       throw const BackupRestoreException(
@@ -354,6 +384,7 @@ final class BackupService {
           decoded['preferences'] is! Map<String, dynamic>) {
         throw const BackupValidationException('Backup data is incomplete.');
       }
+      _validateIntegrityEnvelope(decoded);
       return decoded;
     } on BackupValidationException {
       rethrow;
@@ -362,6 +393,82 @@ final class BackupService {
     } catch (error) {
       throw BackupValidationException('Backup could not be read: $error');
     }
+  }
+
+  static BackupVerificationStatus _verifyIntegrity(
+    Map<String, dynamic> document,
+  ) {
+    final hasIntegrity = document.containsKey('payloadSha256');
+    if (!hasIntegrity) return BackupVerificationStatus.legacyUnverified;
+    final payload = _canonicalPayload(
+      data: document['data'] as Map<String, dynamic>,
+      preferences: document['preferences'] as Map<String, dynamic>,
+    );
+    final bytes = utf8.encode(payload);
+    final checksum = sha256.convert(bytes).toString();
+    if (bytes.length != document['payloadLengthBytes'] ||
+        checksum != document['payloadSha256']) {
+      throw const BackupValidationException(
+        'Backup integrity verification failed.',
+      );
+    }
+    return BackupVerificationStatus.verified;
+  }
+
+  static void _validateIntegrityEnvelope(Map<String, dynamic> document) {
+    const fields = [
+      'appVersion',
+      'exportState',
+      'payloadEncoding',
+      'payloadHashAlgorithm',
+      'payloadLengthBytes',
+      'payloadSha256',
+    ];
+    final present = fields.where(document.containsKey).length;
+    if (present == 0) return; // Existing v1 backup: legacy/unverified.
+    if (present != fields.length) {
+      throw const BackupValidationException(
+        'Backup integrity metadata is incomplete.',
+      );
+    }
+    if (document['appVersion'] is! String ||
+        (document['appVersion'] as String).isEmpty ||
+        document['exportState'] != 'complete' ||
+        document['payloadEncoding'] != payloadEncoding ||
+        document['payloadHashAlgorithm'] != integrityAlgorithm ||
+        document['payloadLengthBytes'] is! int ||
+        (document['payloadLengthBytes'] as int) < 0 ||
+        document['payloadSha256'] is! String ||
+        !RegExp(
+          r'^[0-9a-f]{64}$',
+        ).hasMatch(document['payloadSha256'] as String)) {
+      throw const BackupValidationException(
+        'Backup integrity metadata is invalid.',
+      );
+    }
+  }
+
+  /// Canonical payload bytes are UTF-8 JSON of exactly {data, preferences}.
+  /// Map keys are recursively sorted lexicographically; list order is retained
+  /// because list ordering is part of the persisted payload semantics. Dart's
+  /// JSON number representation, null handling, and escaping are delegated to
+  /// dart:convert's JSON encoder.
+  static String _canonicalPayload({
+    required Map<String, dynamic> data,
+    required Map<String, dynamic> preferences,
+  }) => jsonEncode(_canonicalize({'data': data, 'preferences': preferences}));
+
+  static dynamic _canonicalize(dynamic value) {
+    if (value is Map) {
+      final keys = value.keys.map((key) => key.toString()).toList()..sort();
+      return <String, dynamic>{
+        for (final key in keys) key: _canonicalize(value[key]),
+      };
+    }
+    if (value is List) {
+      return value.map(_canonicalize).toList(growable: false);
+    }
+    return value;
   }
 
   static _BackupRows _validateRows(Map<String, dynamic> document) {

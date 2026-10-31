@@ -13,6 +13,12 @@ Notable changes to Systum are recorded here.
   session interval invariants.
 - Durable restore journal and startup reconciliation for interrupted
   SQLite/SharedPreferences restores.
+- SHA-256 integrity metadata and canonical payload verification for new
+  version-1 backups, with legacy version-1 compatibility.
+- Staged backup export with destination verification levels and conservative
+  interrupted-export recovery.
+- Android Storage Access Framework document publication and resumable retained
+  staged exports when a provider write or readback is interrupted.
 
 ## 0.1.0 — 2026-10-31 — Early Access preparation
 
