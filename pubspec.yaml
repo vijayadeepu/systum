@@ -44,6 +44,7 @@ dependencies:
   file_selector: ^1.1.0
   crypto: ^3.0.6
   path_provider: ^2.1.6
+  timezone: ^0.9.0
 
 dev_dependencies:
   flutter_test:

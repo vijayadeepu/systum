@@ -6,6 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:systum/core/database/database.dart';
 import 'package:systum/features/tasks/models/task.dart';
+import 'package:systum/features/tasks/models/task_sort.dart';
+import 'package:systum/features/tasks/models/task_recurrence.dart';
 import 'package:systum/features/tasks/providers/task_provider.dart';
 import 'package:systum/features/tasks/repository/task_repository.dart';
 import 'package:systum/features/tasks/screens/task_list_page.dart';
@@ -343,6 +345,66 @@ void main() {
       'Updated',
     );
   });
+
+  testWidgets('create task with recurrence persists the first occurrences', (
+    tester,
+  ) async {
+    await pumpTaskList(tester);
+    await tester.tap(find.byType(FloatingActionButton).first);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Repeats'), findsOneWidget);
+    final switchFinder = find.byType(Switch);
+    await tester.scrollUntilVisible(
+      switchFinder,
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(switchFinder.first);
+    await tester.pumpAndSettle();
+    final dropdownFinder = find.byType(DropdownButtonFormField<RecurrenceType>);
+    await tester.scrollUntilVisible(
+      dropdownFinder,
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(dropdownFinder);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Weekly').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Create'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Weekly'), findsWidgets);
+  });
+
+  testWidgets('edit recurring task opens the existing schedule', (
+    tester,
+  ) async {
+    final task = _task(
+      id: 'edit-recurring',
+      title: 'Already repeating',
+      dueDate: DateTime(2026, 8, 2),
+    );
+    final repository = TaskRepository(database);
+    final draft = RecurrenceDraft(
+      recurrenceType: RecurrenceType.weekly,
+      startDate: DateTime(2026, 1, 5),
+      endDate: DateTime(2026, 2, 1),
+      maxOccurrences: 10,
+    );
+    await repository.createTaskWithRecurrence(task, draft);
+
+    await pumpTaskList(tester);
+    await openEditDialog(tester, task.title);
+
+    expect(find.text('Edit Task'), findsOneWidget);
+    expect(find.text('Repeats'), findsOneWidget);
+    final switchWidget = tester.widget<Switch>(find.byType(Switch).first);
+    expect(switchWidget.value, isTrue);
+  });
 }
 
 Task _task({
@@ -397,9 +459,9 @@ class _StaleReloadTaskRepository extends TaskRepository {
   int _getAllCalls = 0;
 
   @override
-  Future<List<TaskRow>> getAll() async {
+  Future<List<TaskRow>> getAll({TaskSort? sort}) async {
     final call = ++_getAllCalls;
-    final tasks = await super.getAll();
+    final tasks = await super.getAll(sort: sort);
     if (call == 2) {
       staleReloadCaptured.complete();
       await releaseStaleReload.future;
@@ -420,11 +482,11 @@ class _FailingReloadTaskRepository extends TaskRepository {
   }
 
   @override
-  Future<List<TaskRow>> getAll() async {
+  Future<List<TaskRow>> getAll({TaskSort? sort}) async {
     if (_failNextReload) {
       _failNextReload = false;
       throw StateError('simulated reload failure');
     }
-    return super.getAll();
+    return super.getAll(sort: sort);
   }
 }

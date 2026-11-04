@@ -8,6 +8,7 @@ import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../tasks/models/task.dart';
+import '../../tasks/providers/recurrence_provider.dart';
 import '../../tasks/providers/task_provider.dart';
 import '../../tasks/widgets/create_task_dialog.dart';
 import '../../tasks/widgets/task_delete_dialog.dart';
@@ -150,17 +151,26 @@ class GoalDetailPage extends ConsumerWidget {
   }
 
   Future<void> _createTaskInGoal(BuildContext context, WidgetRef ref) async {
-    final task = await showDialog<Task>(
+    final result = await showDialog<CreateTaskResult>(
       context: context,
       builder: (_) => const CreateTaskDialog(),
     );
 
-    if (task == null || !context.mounted) {
+    if (result == null || !context.mounted) {
       return;
     }
 
     try {
-      await ref.read(taskProvider.notifier).createTaskInGoal(task, goalId);
+      final recurrence = result.recurrence;
+      if (recurrence == null) {
+        await ref
+            .read(taskProvider.notifier)
+            .createTaskInGoal(result.task, goalId);
+      } else {
+        await ref
+            .read(recurrenceActionsProvider)
+            .createTaskInGoalWithRecurrence(result.task, goalId, recurrence);
+      }
     } catch (error) {
       if (context.mounted) {
         _showMutationError(context, 'Could not create task', error);
@@ -198,17 +208,32 @@ class GoalDetailPage extends ConsumerWidget {
     WidgetRef ref,
     TaskRow taskRow,
   ) async {
-    final task = await showDialog<Task>(
-      context: context,
-      builder: (_) => CreateTaskDialog(task: Task.fromRow(taskRow)),
-    );
-
-    if (task == null || !context.mounted) {
-      return;
-    }
-
     try {
-      await ref.read(taskProvider.notifier).updateTask(task);
+      final existingRule = await ref
+          .read(taskProvider.notifier)
+          .getRecurrenceForTask(taskRow.id);
+      if (!context.mounted) {
+        return;
+      }
+      final result = await showDialog<CreateTaskResult>(
+        context: context,
+        builder: (_) => CreateTaskDialog(
+          task: Task.fromRow(taskRow),
+          existingRecurrence: existingRule,
+        ),
+      );
+
+      if (result == null || !context.mounted) {
+        return;
+      }
+
+      await ref
+          .read(recurrenceActionsProvider)
+          .updateTaskWithRecurrence(
+            result.task,
+            result.recurrence,
+            existingRule: existingRule,
+          );
     } catch (error) {
       if (context.mounted) {
         _showMutationError(context, 'Could not edit task', error);
@@ -221,17 +246,19 @@ class GoalDetailPage extends ConsumerWidget {
     WidgetRef ref,
     TaskRow parent,
   ) async {
-    final subtask = await showDialog<Task>(
+    final result = await showDialog<CreateTaskResult>(
       context: context,
       builder: (_) => CreateTaskDialog(parentTitle: parent.title),
     );
 
-    if (subtask == null || !context.mounted) {
+    if (result == null || !context.mounted) {
       return;
     }
 
     try {
-      await ref.read(taskProvider.notifier).createSubtask(subtask, parent.id);
+      await ref
+          .read(taskProvider.notifier)
+          .createSubtask(result.task, parent.id);
     } catch (error) {
       if (context.mounted) {
         _showMutationError(context, 'Could not add subtask', error);

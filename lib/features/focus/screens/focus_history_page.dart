@@ -6,6 +6,7 @@ import '../models/focus_session.dart';
 import '../models/focus_session_mode.dart';
 import '../models/focus_session_status.dart';
 import '../models/focus_time_aggregation.dart';
+import '../providers/focus_clock_provider.dart';
 import '../providers/focus_provider.dart';
 import '../../tasks/providers/task_provider.dart';
 
@@ -24,7 +25,9 @@ class _FocusHistoryPageState extends ConsumerState<FocusHistoryPage> {
   @override
   void initState() {
     super.initState();
-    final now = DateTime.now();
+    // Use the same injectable clock as the rest of the Focus subsystem so the
+    // initial day is deterministic in tests and remains local-calendar based.
+    final now = ref.read(focusSystemClockProvider)();
     _selectedDay = DateTime(now.year, now.month, now.day);
   }
 

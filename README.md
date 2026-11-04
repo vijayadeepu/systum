@@ -75,6 +75,8 @@ This project emphasizes:
 * Task-to-goal assignment and removal flows
 * Derived goal lifecycle states (active, completed, overdue)
 * Target dates with local calendar-day handling
+* Recurrence rules, bounded occurrence generation, occurrence lifecycle, and
+  task create/edit integration
 * Repository, provider, and widget tests
 * Focus session domain model and interval-based duration calculations
 * Focus schema v4 with transactional upgrade and migration coverage
@@ -91,18 +93,33 @@ This project emphasizes:
   focus interval invariants
 * Durable restore recovery journal with startup reconciliation across SQLite
   and SharedPreferences
+* Read-only SQLite and application diagnostics from the Backup screen, with
+  schema, relationship, focus-interval, and Pomodoro checks
+* Automatic app-private backups at startup when the last successful copy is
+  older than 24 hours, with verified writes, bounded retention, failure status,
+  and a catalogue for restore or deletion
 
 ### Current limitations
 
 * Focus history is currently loaded as one indexed local query; pagination has
   not been added because no measured query problem exists yet.
 * Search, filtering, and manual ordering are not implemented.
-* Automatic backup rotation and retention are not implemented; backups are
-  manual and user-controlled.
+* Automatic backups are lifecycle-triggered at startup or manually; Systum does
+  not run a background backup service. Retention keeps five copies by default
+  and always preserves the current and previous verified copy.
+* Automatic backup files are not encrypted. They remain in app-private storage
+  and are removed when the application's private data is cleared.
+* The full local backup payload includes tasks, goals, recurrence rules and
+  occurrences, and Focus history, so recurring tasks survive a verified
+  restore; legacy version-1 backups without recurrence payload lists remain
+  accepted as legacy/unverified and restore as non-recurring task data.
 * SQLite and SharedPreferences remain separate persistence systems. Restore
   uses a durable journal and startup reconciliation to guarantee that an
   interrupted restore is not reported as complete; it does not provide a
   single cross-store atomic commit.
+* Diagnostics are automated and read-only. They have not been validated on a
+  physical Android device; no Android device or emulator was available in the
+  development environment.
 * Android release signing must be configured with a private key by the release
   owner. The repository does not contain signing credentials.
 * The permanent Android application ID is `com.systum.app`.
@@ -275,6 +292,20 @@ before showing an explicit replace-data confirmation; current data is not
 modified when validation fails or the dialog is cancelled. Backups remain on
 the device or destination chosen by the user and are never uploaded by Systum.
 
+Systum also creates automatic backups in app-private storage. At startup, after
+restore reconciliation completes, it creates one only when the last successful
+automatic backup is at least 24 hours old. Each backup is written to a temporary
+file, renamed into place, read back, and integrity verified before it becomes
+eligible for retention. Automatic backup failures are not silently ignored:
+status, age, and the actionable error appear on the Backup screen. Retention keeps five
+automatic copies by default and preserves the current and previous verified
+copy, so rotation never deletes the only recoverable automatic backup. The
+catalogue lists creation time, size, verification level, task/goal/focus counts,
+and supports confirmed restore or deletion of a selected copy. Restoring an
+automatic copy uses the same validated replace-data path as an imported backup.
+There is no background service; use **Back up now** or an export when the
+startup policy is not sufficient.
+
 New version-1 backups include an integrity envelope with the application
 version, completion state, UTF-8 payload length, and SHA-256 checksum. The
 checksum covers canonical UTF-8 JSON containing exactly `data` and
@@ -300,6 +331,48 @@ When a verified staged backup is retained after interruption, the next export
 action can resume publication after the user selects a destination.
 
 ---
+
+### Data diagnostics
+
+Open **Backup and restore → Run data diagnostics**. Diagnostics execute
+read-only checks for SQLite integrity, foreign keys, schema version, required
+tables/columns/indexes, task relationships, focus session/interval invariants,
+and Pomodoro settings. Results are classified as healthy, warning, error, or
+inconclusive, and list affected record identifiers. Systum never repairs or
+deletes data automatically. If a check is inconclusive, restart the app and run
+it again; preserve the current data and restore only a verified backup after
+reviewing the findings.
+
+## Recurring Tasks and Occurrences
+
+Systum supports recurring tasks with an SQLite source of truth:
+
+* Recurrence types are daily, weekly (selected weekdays), monthly, and a
+  custom every-N-days interval where supported. The weekly type stores a
+  weekday bitmask and applies the interval in week units; the monthly type
+  anchors on the start day and clamps to the last valid day of shorter months,
+  including month-end and leap-year boundaries.
+* The parent task stores the template and the recurrence tables store the
+  rule plus generated occurrences. A rule keeps its parent task in a separate
+  row and every occurrence has a stable `occ:<ruleId>:<YYYY-MM-DD>` identifier.
+* Recurrence dates are stored as UTC midnight epoch milliseconds. Occurrences
+  keep the parent task's due time and timezone, and the occurrence due date is
+  the occurrence calendar date.
+* Generation is bounded (90-day default horizon, 1000 rows per run, 10000
+  iteration guard) and idempotent. It resumes after the latest persisted
+  occurrence, ignores existing dates, and runs missed-date recovery after
+  startup. Stops and edits never regenerate dates that already exist.
+* End dates and maximum occurrence counts are validated and enforced. Editing
+  an existing recurrence preserves prior occurrences and does not backfill
+  before the latest occurrence; saving an empty edit stops future generation.
+* Occurrences can be completed, reopened, rescheduled, or soft-deleted. Deleted
+  occurrences stay stored so generation cannot recreate them, and completion
+  history is preserved.
+* Stopping a recurrence sets the rule inactive and keeps every stored
+  occurrence and completion; resuming continues after the latest occurrence.
+
+These semantics are covered by repository, provider, and widget tests in
+`test/features/tasks/` and migration coverage for schema version 7.
 
 ## Task Hierarchy and Goal Rules
 

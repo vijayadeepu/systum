@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:systum/core/database/database.dart';
 import 'package:systum/features/tasks/models/task.dart';
+import 'package:systum/features/tasks/models/task_sort.dart';
 import 'package:systum/features/tasks/providers/task_provider.dart';
 import 'package:systum/features/tasks/repository/task_repository.dart';
 import 'package:systum/features/tasks/screens/task_list_page.dart';
@@ -185,7 +186,7 @@ class _FailingLoadTaskRepository extends TaskRepository {
   _FailingLoadTaskRepository(super._database);
 
   @override
-  Future<List<TaskRow>> getAll() async {
+  Future<List<TaskRow>> getAll({TaskSort? sort}) async {
     throw StateError('simulated load failure');
   }
 }

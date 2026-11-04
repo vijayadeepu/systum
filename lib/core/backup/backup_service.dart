@@ -10,6 +10,7 @@ import '../../features/focus/models/pomodoro_settings.dart';
 import '../../features/focus/repository/focus_session_repository_support.dart';
 import '../../features/focus/repository/pomodoro_settings_store.dart';
 import '../../features/goals/models/goal_date.dart';
+import '../../features/tasks/models/task_recurrence.dart';
 import '../../core/database/database.dart';
 import 'restore_journal.dart';
 
@@ -22,6 +23,31 @@ final class BackupValidationResult {
   final BackupVerificationStatus status;
 
   bool get isVerified => status == BackupVerificationStatus.verified;
+}
+
+/// Non-destructive metadata used by the backup catalogue.
+final class BackupPreview {
+  const BackupPreview({
+    required this.verification,
+    required this.createdAt,
+    required this.appVersion,
+    required this.schemaVersion,
+    required this.taskCount,
+    required this.goalCount,
+    required this.focusSessionCount,
+    required this.focusIntervalCount,
+  });
+
+  final BackupVerificationStatus verification;
+  final DateTime? createdAt;
+  final String? appVersion;
+  final int schemaVersion;
+  final int taskCount;
+  final int goalCount;
+  final int focusSessionCount;
+  final int focusIntervalCount;
+
+  bool get isVerified => verification == BackupVerificationStatus.verified;
 }
 
 /// Versioned, local-only export and restore for all user-owned Systum data.
@@ -42,6 +68,16 @@ final class BackupService {
   static const payloadEncoding = 'utf-8-json';
   static const integrityAlgorithm = 'sha256';
 
+  /// Upper bound for an import document.
+  ///
+  /// A local file is still untrusted input: rejecting oversized documents
+  /// before JSON decoding prevents an accidental or malicious file from
+  /// exhausting memory while the database transaction has not started.
+  static const maxImportBytes = 64 * 1024 * 1024;
+
+  static bool isDocumentWithinLimit(int length) =>
+      length >= 0 && length <= maxImportBytes;
+
   final SystumDatabase _database;
   final PomodoroSettingsStore _settingsStore;
   final RestoreJournalStore _journalStore;
@@ -56,12 +92,22 @@ final class BackupService {
       final intervals = await _database
           .select(_database.focusSessionIntervals)
           .get();
+      final rules = await _database.select(_database.taskRecurrenceRules).get();
+      final occurrences = await _database
+          .select(_database.taskOccurrences)
+          .get();
       return {
         'goals': goals.map(_goalToJson).toList(growable: false),
         'tasks': tasks.map(_taskToJson).toList(growable: false),
         'focusSessions': sessions.map(_sessionToJson).toList(growable: false),
         'focusIntervals': intervals
             .map(_intervalToJson)
+            .toList(growable: false),
+        'taskRecurrenceRules': rules
+            .map(_recurrenceRuleToJson)
+            .toList(growable: false),
+        'taskOccurrences': occurrences
+            .map(_occurrenceToJson)
             .toList(growable: false),
       };
     });
@@ -93,6 +139,31 @@ final class BackupService {
     final document = _decode(encoded);
     _validateRows(document);
     return BackupValidationResult(_verifyIntegrity(document));
+  }
+
+  /// Returns catalogue metadata from a validated backup document.
+  ///
+  /// The current database is never modified.
+  Future<BackupPreview> inspect(String encoded) async {
+    final document = _decode(encoded);
+    final rows = _validateRows(document);
+    final verification = _verifyIntegrity(document);
+    final rawCreatedAt = document['createdAtUtc'];
+    final appVersion = document['appVersion'];
+    return BackupPreview(
+      verification: verification,
+      createdAt: rawCreatedAt is String
+          ? DateTime.tryParse(rawCreatedAt)
+          : null,
+      appVersion: appVersion is String && appVersion.isNotEmpty
+          ? appVersion
+          : null,
+      schemaVersion: document['databaseSchemaVersion'] as int,
+      taskCount: rows.tasks.length,
+      goalCount: rows.goals.length,
+      focusSessionCount: rows.sessions.length,
+      focusIntervalCount: rows.intervals.length,
+    );
   }
 
   /// Replaces local data only after the caller has obtained explicit consent.
@@ -199,6 +270,8 @@ final class BackupService {
     return _database.transaction(() async {
       await _database.delete(_database.focusSessionIntervals).go();
       await _database.delete(_database.focusSessions).go();
+      await _database.delete(_database.taskOccurrences).go();
+      await _database.delete(_database.taskRecurrenceRules).go();
       await _database.delete(_database.tasks).go();
       await _database.delete(_database.goals).go();
 
@@ -223,6 +296,16 @@ final class BackupService {
               ),
             );
       }
+      for (final rule in rows.rules) {
+        await _database
+            .into(_database.taskRecurrenceRules)
+            .insert(rule.toCompanion());
+      }
+      for (final occurrence in rows.occurrences) {
+        await _database
+            .into(_database.taskOccurrences)
+            .insert(occurrence.toCompanion());
+      }
     });
   }
 
@@ -234,11 +317,17 @@ final class BackupService {
       final intervals = await _database
           .select(_database.focusSessionIntervals)
           .get();
+      final rules = await _database.select(_database.taskRecurrenceRules).get();
+      final occurrences = await _database
+          .select(_database.taskOccurrences)
+          .get();
       return {
         'goals': goals.map(_goalToJson).toList(),
         'tasks': tasks.map(_taskToJson).toList(),
         'focusSessions': sessions.map(_sessionToJson).toList(),
         'focusIntervals': intervals.map(_intervalToJson).toList(),
+        'taskRecurrenceRules': rules.map(_recurrenceRuleToJson).toList(),
+        'taskOccurrences': occurrences.map(_occurrenceToJson).toList(),
       };
     });
     return _fingerprintData(data);
@@ -250,6 +339,12 @@ final class BackupService {
     'focusSessions': rows.sessions.map(_sessionToJsonFromDomain).toList(),
     'focusIntervals': rows.intervals
         .map((row) => _intervalToJsonFromDomain(row.id, row.value))
+        .toList(),
+    'taskRecurrenceRules': rows.rules
+        .map(_recurrenceRuleToJsonFromDomain)
+        .toList(),
+    'taskOccurrences': rows.occurrences
+        .map(_occurrenceToJsonFromDomain)
         .toList(),
   });
 
@@ -286,7 +381,13 @@ final class BackupService {
   static String _randomSuffix() =>
       DateTime.now().millisecondsSinceEpoch.toRadixString(36);
 
-  static const _schemaVersion = 4;
+  static const _schemaVersion = 7;
+
+  /// Schema version recorded by older backup releases. The backup format
+  /// introduced before the task due-time columns remained at version 4 even
+  /// though task rows already contained due time/timezone fields, so those
+  /// documents remain readable.
+  static const int _legacySchemaVersion = 4;
 
   static Map<String, Object?> _goalToJson(GoalRow goal) => {
     'id': goal.id,
@@ -305,6 +406,8 @@ final class BackupService {
     'createdAtMs': task.createdAt.toUtc().millisecondsSinceEpoch,
     'updatedAtMs': task.updatedAt.toUtc().millisecondsSinceEpoch,
     'dueDateMs': task.dueDate?.toUtc().millisecondsSinceEpoch,
+    'dueTimeSeconds': task.dueTime,
+    'dueTimezone': task.dueTimezone,
     'priority': task.priority,
     'category': task.category,
     'goalId': task.goalId,
@@ -363,7 +466,77 @@ final class BackupService {
     'endedAtMs': interval.endedAtMs,
   };
 
+  static Map<String, Object?> _recurrenceRuleToJson(
+    TaskRecurrenceRuleRow rule,
+  ) => {
+    'id': rule.id,
+    'parentTaskId': rule.parentTaskId,
+    'recurrenceType': rule.recurrenceType,
+    'interval': rule.interval,
+    'weekdays': rule.weekdays,
+    'startDateMs': rule.startDate,
+    'endDateMs': rule.endDate,
+    'maxOccurrences': rule.maxOccurrences,
+    'isActive': rule.isActive,
+    'createdAtMs': rule.createdAt,
+    'updatedAtMs': rule.updatedAt,
+  };
+
+  static Map<String, Object?> _occurrenceToJson(TaskOccurrenceRow occurrence) =>
+      {
+        'id': occurrence.id,
+        'ruleId': occurrence.ruleId,
+        'occurrenceDateMs': occurrence.occurrenceDate,
+        'dueDateMs': occurrence.dueDate,
+        'dueTimeSeconds': occurrence.dueTime,
+        'dueTimezone': occurrence.dueTimezone,
+        'completed': occurrence.completed,
+        'isDeleted': occurrence.isDeleted,
+        'createdAtMs': occurrence.createdAt,
+        'updatedAtMs': occurrence.updatedAt,
+      };
+
+  static Map<String, Object?> _recurrenceRuleToJsonFromDomain(
+    TaskRecurrenceRule rule,
+  ) => {
+    'id': rule.id,
+    'parentTaskId': rule.parentTaskId,
+    'recurrenceType': rule.recurrenceType.name,
+    'interval': rule.interval,
+    'weekdays': rule.weekdays,
+    'startDateMs': recurrenceDateToEpochMs(rule.startDate),
+    'endDateMs': rule.endDate == null
+        ? null
+        : recurrenceDateToEpochMs(rule.endDate!),
+    'maxOccurrences': rule.maxOccurrences,
+    'isActive': rule.isActive,
+    'createdAtMs': rule.createdAt.toUtc().millisecondsSinceEpoch,
+    'updatedAtMs': rule.updatedAt.toUtc().millisecondsSinceEpoch,
+  };
+
+  static Map<String, Object?> _occurrenceToJsonFromDomain(
+    TaskOccurrence occurrence,
+  ) => {
+    'id': occurrence.id,
+    'ruleId': occurrence.ruleId,
+    'occurrenceDateMs': recurrenceDateToEpochMs(occurrence.occurrenceDate),
+    'dueDateMs': occurrence.dueDate == null
+        ? null
+        : recurrenceDateToEpochMs(occurrence.dueDate!),
+    'dueTimeSeconds': occurrence.dueTime,
+    'dueTimezone': occurrence.dueTimezone,
+    'completed': occurrence.completed,
+    'isDeleted': occurrence.isDeleted,
+    'createdAtMs': occurrence.createdAt.toUtc().millisecondsSinceEpoch,
+    'updatedAtMs': occurrence.updatedAt.toUtc().millisecondsSinceEpoch,
+  };
+
   static Map<String, dynamic> _decode(String encoded) {
+    if (!isDocumentWithinLimit(encoded.length)) {
+      throw const BackupValidationException(
+        'Backup file is too large to import safely.',
+      );
+    }
     try {
       final decoded = jsonDecode(encoded);
       if (decoded is! Map<String, dynamic>) {
@@ -375,7 +548,8 @@ final class BackupService {
       if (decoded['version'] != currentVersion) {
         throw const BackupValidationException('Unsupported backup version.');
       }
-      if (decoded['databaseSchemaVersion'] != _schemaVersion) {
+      if (decoded['databaseSchemaVersion'] != _schemaVersion &&
+          decoded['databaseSchemaVersion'] != _legacySchemaVersion) {
         throw const BackupValidationException(
           'Backup database schema is not supported by this version.',
         );
@@ -484,13 +658,25 @@ final class BackupService {
       data,
       'focusIntervals',
     ).map(_intervalFromJson).toList();
+    // Older backups predate recurrence. Missing lists are treated as empty.
+    final rules = _optionalList(
+      data,
+      'taskRecurrenceRules',
+    ).map(_recurrenceRuleFromJson).toList();
+    final occurrences = _optionalList(
+      data,
+      'taskOccurrences',
+    ).map(_occurrenceFromJson).toList();
     _requireUnique(goals.map((row) => row.id), 'goal');
     _requireUnique(tasks.map((row) => row.id), 'task');
     _requireUnique(sessions.map((row) => row.id), 'focus session');
     _requireUnique(intervals.map((row) => row.id), 'focus interval');
+    _requireUnique(rules.map((row) => row.id), 'recurrence rule');
+    _requireUnique(occurrences.map((row) => row.id), 'occurrence');
     final goalIds = goals.map((row) => row.id).toSet();
     final taskIds = tasks.map((row) => row.id).toSet();
     final sessionIds = sessions.map((row) => row.id).toSet();
+    final ruleIds = rules.map((row) => row.id).toSet();
     if (tasks.any(
       (row) =>
           (row.goalId != null && !goalIds.contains(row.goalId)) ||
@@ -513,6 +699,41 @@ final class BackupService {
         'A focus interval references a missing session.',
       );
     }
+    final parentRuleIds = <String>{};
+    for (final rule in rules) {
+      final parentTaskId = rule.parentTaskId;
+      if (parentTaskId == null || !taskIds.contains(parentTaskId)) {
+        throw const BackupValidationException(
+          'A recurrence rule references a missing parent task.',
+        );
+      }
+      if (!parentRuleIds.add(parentTaskId)) {
+        throw const BackupValidationException(
+          'A task has more than one recurrence rule.',
+        );
+      }
+      final errors = rule.validate();
+      if (errors.isNotEmpty) {
+        throw BackupValidationException(
+          'Recurrence rule ${rule.id} is invalid: ${errors.join(' ')}',
+        );
+      }
+    }
+    final occurrenceKeys = <String>{};
+    for (final occurrence in occurrences) {
+      final ruleId = occurrence.ruleId;
+      if (ruleId == null || !ruleIds.contains(ruleId)) {
+        throw const BackupValidationException(
+          'An occurrence references a missing recurrence rule.',
+        );
+      }
+      final key = '$ruleId:${recurrenceDateKey(occurrence.occurrenceDate)}';
+      if (!occurrenceKeys.add(key)) {
+        throw const BackupValidationException(
+          'A recurrence rule contains duplicate occurrence dates.',
+        );
+      }
+    }
     final intervalsBySession = <String, List<FocusSessionInterval>>{};
     for (final row in intervals) {
       intervalsBySession
@@ -532,7 +753,15 @@ final class BackupService {
       }
     }
     _validatePreferences(preferences);
-    return _BackupRows(goals, tasks, sessions, intervals, preferences);
+    return _BackupRows(
+      goals,
+      tasks,
+      sessions,
+      intervals,
+      rules,
+      occurrences,
+      preferences,
+    );
   }
 
   static List<dynamic> _list(Map<String, dynamic> data, String key) {
@@ -541,6 +770,11 @@ final class BackupService {
       throw BackupValidationException('Backup field "$key" is invalid.');
     }
     return value;
+  }
+
+  static List<dynamic> _optionalList(Map<String, dynamic> data, String key) {
+    if (!data.containsKey(key)) return const [];
+    return _list(data, key);
   }
 
   static void _requireUnique(Iterable<String> ids, String label) {
@@ -574,6 +808,8 @@ final class BackupService {
       createdAt: _date(row, 'createdAtMs'),
       updatedAt: _date(row, 'updatedAtMs'),
       dueDate: _nullableDate(row, 'dueDateMs'),
+      dueTime: _nullableInt(row, 'dueTimeSeconds'),
+      dueTimezone: _nullableString(row, 'dueTimezone'),
       priority: _int(row, 'priority'),
       category: _nullableString(row, 'category'),
       goalId: _nullableString(row, 'goalId'),
@@ -612,6 +848,62 @@ final class BackupService {
       endedAtMs: _nullableInt(row, 'endedAtMs'),
     );
     return _BackupInterval(_string(row, 'id'), interval);
+  }
+
+  static TaskRecurrenceRule _recurrenceRuleFromJson(dynamic value) {
+    final row = _map(value, 'recurrence rule');
+    final recurrenceType = _enumValue(
+      RecurrenceType.values,
+      _string(row, 'recurrenceType'),
+      'recurrenceType',
+    );
+    final rawStart = _int(row, 'startDateMs');
+    final rawEnd = _nullableInt(row, 'endDateMs');
+    _requireCanonicalRecurrenceDate(rawStart);
+    if (rawEnd != null) _requireCanonicalRecurrenceDate(rawEnd);
+    return TaskRecurrenceRule(
+      id: _string(row, 'id'),
+      parentTaskId: _nullableString(row, 'parentTaskId'),
+      recurrenceType: recurrenceType,
+      interval: _int(row, 'interval'),
+      weekdays: _nullableInt(row, 'weekdays'),
+      startDate: recurrenceDateFromEpochMs(rawStart),
+      endDate: rawEnd == null ? null : recurrenceDateFromEpochMs(rawEnd),
+      maxOccurrences: _nullableInt(row, 'maxOccurrences'),
+      isActive: _bool(row, 'isActive'),
+      createdAt: _date(row, 'createdAtMs'),
+      updatedAt: _date(row, 'updatedAtMs'),
+    );
+  }
+
+  static TaskOccurrence _occurrenceFromJson(dynamic value) {
+    final row = _map(value, 'occurrence');
+    final rawOccurrenceDate = _int(row, 'occurrenceDateMs');
+    final rawDueDate = _nullableInt(row, 'dueDateMs');
+    _requireCanonicalRecurrenceDate(rawOccurrenceDate);
+    if (rawDueDate != null) _requireCanonicalRecurrenceDate(rawDueDate);
+    return TaskOccurrence(
+      id: _string(row, 'id'),
+      ruleId: _nullableString(row, 'ruleId'),
+      occurrenceDate: recurrenceDateFromEpochMs(rawOccurrenceDate),
+      dueDate: rawDueDate == null
+          ? null
+          : recurrenceDateFromEpochMs(rawDueDate),
+      dueTime: _nullableInt(row, 'dueTimeSeconds'),
+      dueTimezone: _nullableString(row, 'dueTimezone'),
+      completed: _bool(row, 'completed'),
+      isDeleted: _bool(row, 'isDeleted'),
+      createdAt: _date(row, 'createdAtMs'),
+      updatedAt: _date(row, 'updatedAtMs'),
+    );
+  }
+
+  static void _requireCanonicalRecurrenceDate(int milliseconds) {
+    if (milliseconds % Duration.millisecondsPerDay != 0) {
+      throw const BackupValidationException(
+        'Recurrence dates must be stored as UTC midnight.',
+      );
+    }
   }
 
   static void _validatePreferences(Map<String, dynamic> preferences) {
@@ -724,6 +1016,8 @@ final class _BackupRows {
     this.tasks,
     this.sessions,
     this.intervals,
+    this.rules,
+    this.occurrences,
     this.preferences,
   );
 
@@ -731,6 +1025,8 @@ final class _BackupRows {
   final List<TaskRow> tasks;
   final List<FocusSession> sessions;
   final List<_BackupInterval> intervals;
+  final List<TaskRecurrenceRule> rules;
+  final List<TaskOccurrence> occurrences;
   final Map<String, dynamic> preferences;
 }
 

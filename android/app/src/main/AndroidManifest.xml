@@ -3,7 +3,8 @@
         android:label="Systum"
         android:name="${applicationName}"
         android:icon="@mipmap/systum_launcher"
-        android:roundIcon="@mipmap/systum_launcher">
+        android:roundIcon="@mipmap/systum_launcher"
+        android:allowBackup="false">
         <activity
             android:name=".MainActivity"
             android:exported="true"

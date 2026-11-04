@@ -18,6 +18,8 @@ class Task {
     required this.createdAt,
     required this.updatedAt,
     this.dueDate,
+    this.dueTime,
+    this.dueTimezone,
     this.priority = 2,
     this.category,
   });
@@ -31,6 +33,8 @@ class Task {
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
       dueDate: row.dueDate,
+      dueTime: row.dueTime,
+      dueTimezone: row.dueTimezone,
       priority: row.priority,
       category: row.category,
     );
@@ -43,6 +47,8 @@ class Task {
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime? dueDate;
+  final int? dueTime;
+  final String? dueTimezone;
   final int priority;
   final String? category;
 
@@ -54,6 +60,8 @@ class Task {
     DateTime? createdAt,
     DateTime? updatedAt,
     Object? dueDate = _unset,
+    Object? dueTime = _unset,
+    Object? dueTimezone = _unset,
     int? priority,
     Object? category = _unset,
   }) {
@@ -67,6 +75,10 @@ class Task {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       dueDate: dueDate == _unset ? this.dueDate : dueDate as DateTime?,
+      dueTime: dueTime == _unset ? this.dueTime : dueTime as int?,
+      dueTimezone: dueTimezone == _unset
+          ? this.dueTimezone
+          : dueTimezone as String?,
       priority: priority ?? this.priority,
       category: category == _unset ? this.category : category as String?,
     );
@@ -81,6 +93,8 @@ class Task {
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
       dueDate: Value(dueDate),
+      dueTime: Value(dueTime),
+      dueTimezone: Value(dueTimezone),
       priority: Value(priority),
       category: Value(category),
     );
@@ -97,6 +111,8 @@ class Task {
             createdAt == other.createdAt &&
             updatedAt == other.updatedAt &&
             dueDate == other.dueDate &&
+            dueTime == other.dueTime &&
+            dueTimezone == other.dueTimezone &&
             priority == other.priority &&
             category == other.category;
   }
@@ -111,6 +127,8 @@ class Task {
       createdAt,
       updatedAt,
       dueDate,
+      dueTime,
+      dueTimezone,
       priority,
       category,
     );

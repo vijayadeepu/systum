@@ -5,6 +5,7 @@ import 'package:systum/features/focus/models/focus_session.dart';
 import 'package:systum/features/focus/models/focus_session_interval.dart';
 import 'package:systum/features/focus/models/focus_session_mode.dart';
 import 'package:systum/features/focus/models/focus_session_status.dart';
+import 'package:systum/features/focus/providers/focus_clock_provider.dart';
 import 'package:systum/features/focus/providers/focus_provider.dart';
 import 'package:systum/features/focus/screens/focus_history_page.dart';
 import 'package:systum/shared/providers/database_provider.dart';
@@ -23,6 +24,9 @@ void main() {
       key: UniqueKey(),
       overrides: [
         databaseProvider.overrideWithValue(database),
+        focusSystemClockProvider.overrideWithValue(
+          () => DateTime(2026, 10, 31, 12),
+        ),
         focusHistoryProvider.overrideWith((ref) => history()),
       ],
       child: const MaterialApp(home: FocusHistoryPage()),

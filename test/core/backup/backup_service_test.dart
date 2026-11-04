@@ -12,6 +12,9 @@ import 'package:systum/features/focus/models/pomodoro_settings.dart';
 import 'package:systum/features/focus/repository/focus_session_repository_support.dart';
 import 'package:systum/features/focus/repository/pomodoro_settings_store.dart';
 import 'package:systum/core/backup/restore_journal.dart';
+import 'package:systum/features/tasks/models/task.dart';
+import 'package:systum/features/tasks/models/task_recurrence.dart';
+import 'package:systum/features/tasks/repository/task_repository.dart';
 
 void main() {
   late SystumDatabase database;
@@ -296,6 +299,77 @@ void main() {
       service.restore(await service.createBackup(), overwriteExisting: false),
       throwsA(isA<BackupRestoreException>()),
     );
+  });
+
+  test(
+    'round trips recurring task history through backup and restore',
+    () async {
+      final today = DateTime.utc(2026, 1, 1);
+      final task = Task(
+        id: 'recurring',
+        title: 'Recur weekly',
+        createdAt: today,
+        updatedAt: today,
+        dueDate: today,
+      );
+      final draft = RecurrenceDraft(
+        recurrenceType: RecurrenceType.weekly,
+        startDate: today,
+        endDate: DateTime.utc(2026, 2, 1),
+      );
+      await TaskRepository(database).createTaskWithRecurrence(task, draft);
+
+      final encoded = await service.createBackup();
+      final document = jsonDecode(encoded) as Map<String, dynamic>;
+      final data = document['data'] as Map<String, dynamic>;
+      expect((data['taskRecurrenceRules'] as List).single, isNotEmpty);
+      expect((data['taskOccurrences'] as List), isNotEmpty);
+
+      await database.delete(database.tasks).go();
+      await service.restore(encoded, overwriteExisting: true);
+
+      final rules = await database.select(database.taskRecurrenceRules).get();
+      expect(rules, hasLength(1));
+      expect(rules.single.parentTaskId, 'recurring');
+      final occurrences = await database.select(database.taskOccurrences).get();
+      expect(occurrences, hasLength(5));
+      expect(occurrences.map((occurrence) => occurrence.ruleId), isNotEmpty);
+    },
+  );
+
+  test(
+    'accepts backups recorded with the legacy database schema version',
+    () async {
+      final base =
+          jsonDecode(await service.createBackup()) as Map<String, dynamic>;
+      final mutable = jsonDecode(jsonEncode(base)) as Map<String, dynamic>;
+      mutable['databaseSchemaVersion'] = 4;
+
+      final result = await service.validate(jsonEncode(mutable));
+      expect(result.status, BackupVerificationStatus.verified);
+    },
+  );
+
+  test('treats backups without recurrence payload lists as legacy', () async {
+    final base =
+        jsonDecode(await service.createBackup()) as Map<String, dynamic>;
+    final mutable = jsonDecode(jsonEncode(base)) as Map<String, dynamic>;
+    final data = mutable['data'] as Map<String, dynamic>;
+    data.remove('taskRecurrenceRules');
+    data.remove('taskOccurrences');
+    for (final key in [
+      'appVersion',
+      'exportState',
+      'payloadEncoding',
+      'payloadHashAlgorithm',
+      'payloadLengthBytes',
+      'payloadSha256',
+    ]) {
+      mutable.remove(key);
+    }
+
+    final result = await service.validate(jsonEncode(mutable));
+    expect(result.status, BackupVerificationStatus.legacyUnverified);
   });
 
   test(

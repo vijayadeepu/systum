@@ -8,3 +8,13 @@ String formatDate(DateTime date) {
   final day = local.day.toString().padLeft(2, '0');
   return '${local.year}-$month-$day';
 }
+
+/// Formats the calendar components of [date] without converting timezone.
+///
+/// Use this for date-only values stored as UTC midnight so the displayed date
+/// cannot shift when the device timezone changes.
+String formatDateOnly(DateTime date) {
+  final month = date.month.toString().padLeft(2, '0');
+  final day = date.day.toString().padLeft(2, '0');
+  return '${date.year}-$month-$day';
+}

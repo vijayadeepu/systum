@@ -364,7 +364,7 @@ void main() {
           expect(
             (await migrated.customSelect('PRAGMA user_version').getSingle())
                 .read<int>('user_version'),
-            4,
+            7,
           );
           expect(
             (await migrated.select(migrated.goals).getSingle()).title,

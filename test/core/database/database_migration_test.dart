@@ -7,7 +7,7 @@ import 'package:systum/core/database/database.dart';
 import 'package:systum/features/goals/models/goal_date.dart';
 
 void main() {
-  group('SystumDatabase schema version 4', () {
+  group('SystumDatabase schema version 5', () {
     test('creates the current schema in a fresh database', () async {
       final database = SystumDatabase.test(NativeDatabase.memory());
       addTearDown(database.close);
@@ -121,7 +121,7 @@ void main() {
         expect(
           (await database.customSelect('PRAGMA user_version').getSingle())
               .read<int>('user_version'),
-          4,
+          7,
         );
         expect(
           await _tableNames(database),
@@ -377,7 +377,7 @@ void main() {
                   .customSelect('PRAGMA user_version')
                   .getSingle())
               .read<int>('user_version'),
-          4,
+          7,
         );
 
         final parent = await (migratedDatabase.select(
@@ -428,6 +428,148 @@ void main() {
       }
     },
   );
+
+  test('migrates v6 recurrence dates, duplicates and indexes to v7', () async {
+    final legacyStart = DateTime(2026, 1, 15).millisecondsSinceEpoch;
+    final legacyEnd = DateTime(2026, 2, 15).millisecondsSinceEpoch;
+    final legacyOccurrence = DateTime(2026, 1, 15).millisecondsSinceEpoch;
+    final database = SystumDatabase.test(
+      NativeDatabase.memory(
+        setup: (legacy) {
+          legacy.execute('''
+              CREATE TABLE task_recurrence_rules (
+                id TEXT NOT NULL PRIMARY KEY,
+                parent_task_id TEXT,
+                recurrence_type TEXT NOT NULL,
+                interval INTEGER NOT NULL DEFAULT 1,
+                weekdays INTEGER,
+                start_date INTEGER NOT NULL,
+                end_date INTEGER,
+                max_occurrences INTEGER,
+                created_at INTEGER NOT NULL,
+                updated_at INTEGER NOT NULL
+              )
+            ''');
+          legacy.execute('''
+              CREATE TABLE task_occurrences (
+                id TEXT NOT NULL PRIMARY KEY,
+                rule_id TEXT,
+                occurrence_date INTEGER NOT NULL,
+                due_date INTEGER,
+                due_time INTEGER,
+                due_timezone TEXT,
+                completed INTEGER NOT NULL DEFAULT 0,
+                is_deleted INTEGER NOT NULL DEFAULT 0,
+                created_at INTEGER NOT NULL,
+                updated_at INTEGER NOT NULL
+              )
+            ''');
+          legacy.execute(
+            'CREATE INDEX task_recurrence_rules_parent_task_id_idx '
+            'ON task_recurrence_rules (parent_task_id)',
+          );
+          legacy.execute(
+            'CREATE INDEX task_occurrences_rule_id_idx '
+            'ON task_occurrences (rule_id)',
+          );
+          legacy.execute(
+            'CREATE INDEX task_occurrences_occurrence_date_idx '
+            'ON task_occurrences (occurrence_date)',
+          );
+          for (final ruleId in ['rule-keep', 'rule-duplicate']) {
+            legacy.execute(
+              'INSERT INTO task_recurrence_rules '
+              '(id, parent_task_id, recurrence_type, interval, '
+              'start_date, end_date, created_at, updated_at) '
+              'VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+              [
+                ruleId,
+                'parent',
+                'daily',
+                1,
+                legacyStart,
+                legacyEnd,
+                1000,
+                2000,
+              ],
+            );
+          }
+          legacy.execute(
+            'INSERT INTO task_occurrences '
+            '(id, rule_id, occurrence_date, due_date, created_at, updated_at) '
+            'VALUES (?, ?, ?, ?, ?, ?)',
+            [
+              'occ-keep',
+              'rule-keep',
+              legacyOccurrence,
+              legacyOccurrence,
+              1000,
+              2000,
+            ],
+          );
+          legacy.execute(
+            'INSERT INTO task_occurrences '
+            '(id, rule_id, occurrence_date, due_date, created_at, updated_at) '
+            'VALUES (?, ?, ?, ?, ?, ?)',
+            [
+              'occ-duplicate',
+              'rule-keep',
+              legacyOccurrence,
+              legacyOccurrence,
+              1001,
+              2001,
+            ],
+          );
+          legacy.execute(
+            'INSERT INTO task_occurrences '
+            '(id, rule_id, occurrence_date, due_date, created_at, updated_at) '
+            'VALUES (?, ?, ?, ?, ?, ?)',
+            [
+              'occ-discarded-rule',
+              'rule-duplicate',
+              legacyOccurrence,
+              legacyOccurrence,
+              1002,
+              2002,
+            ],
+          );
+          legacy.execute('PRAGMA user_version = 6');
+        },
+      ),
+    );
+    addTearDown(database.close);
+
+    final rules = await database.select(database.taskRecurrenceRules).get();
+    expect(rules.map((rule) => rule.id), ['rule-keep']);
+    final rule = rules.single;
+    expect(rule.isActive, isTrue);
+    expect(rule.startDate, DateTime.utc(2026, 1, 15).millisecondsSinceEpoch);
+    expect(rule.endDate, DateTime.utc(2026, 2, 15).millisecondsSinceEpoch);
+
+    final occurrences = await database.select(database.taskOccurrences).get();
+    expect(occurrences.map((occurrence) => occurrence.id), ['occ-keep']);
+    expect(
+      occurrences.single.occurrenceDate,
+      DateTime.utc(2026, 1, 15).millisecondsSinceEpoch,
+    );
+    expect(
+      occurrences.single.dueDate,
+      DateTime.utc(2026, 1, 15).millisecondsSinceEpoch,
+    );
+
+    expect(
+      await _indexNames(database),
+      containsAll([
+        'task_recurrence_rules_parent_unique_idx',
+        'task_occurrences_rule_date_unique_idx',
+      ]),
+    );
+    expect(
+      (await database.customSelect('PRAGMA user_version').getSingle())
+          .read<int>('user_version'),
+      7,
+    );
+  });
 }
 
 int _toVersion2DateTime(DateTime dateTime) =>

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/backup/backup_provider.dart';
 import '../core/theme/app_theme.dart';
+import '../features/tasks/providers/recurrence_provider.dart';
 import 'router.dart';
 
 class SystumApp extends ConsumerWidget {
@@ -38,6 +39,11 @@ class SystumApp extends ConsumerWidget {
         ),
       );
     }
+    // Only start an automatic backup after restore reconciliation completed,
+    // so an interrupted restore can never be captured as a new backup.
+    ref.watch(automaticBackupProvider);
+    // Recover any occurrence dates missed while the app was not running.
+    ref.watch(recurrenceRecoveryProvider);
     return MaterialApp.router(
       title: 'Systum',
       debugShowCheckedModeBanner: false,

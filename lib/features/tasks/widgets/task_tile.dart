@@ -6,6 +6,7 @@ import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../shared/utils/date_format.dart';
+import '../providers/countdown_provider.dart';
 
 class TaskTile extends StatelessWidget {
   const TaskTile({
@@ -22,6 +23,8 @@ class TaskTile extends StatelessWidget {
     this.onOpenGoal,
     this.onAssignGoal,
     this.onRemoveFromGoal,
+    this.countdown,
+    this.recurrenceSummary,
   });
 
   final TaskRow task;
@@ -41,6 +44,13 @@ class TaskTile extends StatelessWidget {
   /// change their goal assignment.
   final VoidCallback? onAssignGoal;
   final VoidCallback? onRemoveFromGoal;
+
+  /// Optional countdown result for this task, used to display a live
+  /// countdown to the deadline.
+  final CountdownResult? countdown;
+
+  /// Human-readable recurrence summary for a parent/template task.
+  final String? recurrenceSummary;
 
   @override
   Widget build(BuildContext context) {
@@ -82,6 +92,29 @@ class TaskTile extends StatelessWidget {
                       ),
                       if (dueDateText != null)
                         Text(dueDateText, style: AppTypography.caption),
+                      if (recurrenceSummary != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: AppSpacing.xxs),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.repeat_rounded,
+                                size: 14,
+                                color: AppColors.textSecondary,
+                              ),
+                              const SizedBox(width: AppSpacing.xxs),
+                              Flexible(
+                                child: Text(
+                                  recurrenceSummary!,
+                                  style: AppTypography.caption,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      if (countdown != null) _buildCountdownText(countdown),
                       if (subtaskCount > 0)
                         Padding(
                           padding: const EdgeInsets.only(top: AppSpacing.xxs),
@@ -214,6 +247,32 @@ class TaskTile extends StatelessWidget {
     }
 
     return 'Due ${formatDate(dueDate)}';
+  }
+
+  Widget _buildCountdownText(CountdownResult? countdown) {
+    if (countdown == null) return const SizedBox.shrink();
+    if (countdown.isDueNow) {
+      return Text(
+        'Due now',
+        style: AppTypography.caption.copyWith(
+          color: AppColors.warning,
+          fontWeight: FontWeight.w600,
+        ),
+      );
+    }
+    if (countdown.isOverdue) {
+      return Text(
+        'Overdue',
+        style: AppTypography.caption.copyWith(
+          color: AppColors.error,
+          fontWeight: FontWeight.w600,
+        ),
+      );
+    }
+    return Text(
+      formatCountdown(countdown.remaining!),
+      style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
+    );
   }
 
   static String _priorityText(int priority) {

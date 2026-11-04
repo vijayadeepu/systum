@@ -19,6 +19,33 @@ Notable changes to Systum are recorded here.
   interrupted-export recovery.
 - Android Storage Access Framework document publication and resumable retained
   staged exports when a provider write or readback is interrupted.
+- Read-only data diagnostics for SQLite integrity, foreign keys, schema
+  version/columns/indexes, task relationships, focus interval invariants, and
+  Pomodoro settings, including affected-record identifiers and recovery
+  guidance.
+- Automatic app-private backups at startup when the last verified copy is
+  older than 24 hours, with verified atomic writes, bounded retention that
+  preserves the current and previous copy, persisted failure status, temporary
+  file reconciliation, and duplicate-run protection.
+- Backup catalogue showing creation time, size, verification level, and
+  task/goal/focus counts, with confirmed restore and deletion of selected
+  automatic copies.
+- Recurring task support: daily, weekly with selected weekdays, monthly, and
+  custom every-N-days rules; task create/edit integration; schema v7
+  task_recurrence_rules and task_occurrences tables with unique indexes and
+  UTC-midnight date normalization from v6; bounded idempotent occurrence
+  generation with generation horizon and caps; end date and maximum occurrence
+  enforcement; stop/resume semantics that preserve history; independent
+  occurrence completion, reopening, rescheduling, and soft deletion.
+- Read-only recurrence diagnostics for rules, occurrences, validity, and
+  duplicate/orphan records.
+
+### Fixed
+
+- Focus History now uses the injectable Focus system clock for its initial day,
+  removing date-coupled behavior and restoring deterministic widget tests.
+- Version 7 migration now removes occurrences belonging to discarded duplicate
+  legacy rules before deleting those rules, preventing orphaned references.
 
 ## 0.1.0 — 2026-10-31 — Early Access preparation
 

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:systum/core/database/database.dart';
 import 'package:systum/features/tasks/models/task.dart';
+import 'package:systum/features/tasks/models/task_sort.dart';
 import 'package:systum/features/tasks/providers/task_provider.dart';
 import 'package:systum/features/tasks/repository/task_repository.dart';
 import 'package:systum/shared/providers/database_provider.dart';
@@ -293,12 +294,12 @@ class _FailingReloadSubtaskRepository extends TaskRepository {
   }
 
   @override
-  Future<List<TaskRow>> getAll() async {
+  Future<List<TaskRow>> getAll({TaskSort? sort}) async {
     if (_failNextReload) {
       _failNextReload = false;
       throw StateError('simulated reload failure');
     }
-    return super.getAll();
+    return super.getAll(sort: sort);
   }
 }
 
@@ -316,13 +317,13 @@ class _BlockingInitialLoadRepository extends TaskRepository {
   bool _isInitialLoad = true;
 
   @override
-  Future<List<TaskRow>> getAll() async {
+  Future<List<TaskRow>> getAll({TaskSort? sort}) async {
     if (!_isInitialLoad) {
-      return super.getAll();
+      return super.getAll(sort: sort);
     }
 
     _isInitialLoad = false;
-    final snapshot = await super.getAll();
+    final snapshot = await super.getAll(sort: sort);
     initialLoadCaptured.complete();
     try {
       await releaseInitialLoad.future;
