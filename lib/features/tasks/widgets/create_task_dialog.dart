@@ -27,6 +27,8 @@ class CreateTaskDialog extends StatefulWidget {
     this.task,
     this.parentTitle,
     this.existingRecurrence,
+    this.initialDueDate,
+    this.initialTitle,
   });
 
   final Task? task;
@@ -36,6 +38,12 @@ class CreateTaskDialog extends StatefulWidget {
 
   /// Existing rule shown when editing a recurring task.
   final TaskRecurrenceRule? existingRecurrence;
+
+  /// Due date pre-filled for a new task, for example the selected agenda day.
+  final DateTime? initialDueDate;
+
+  /// Title pre-filled for a new task, for example content shared from Android.
+  final String? initialTitle;
 
   @override
   State<CreateTaskDialog> createState() => _CreateTaskDialogState();
@@ -84,7 +92,10 @@ class _CreateTaskDialogState extends State<CreateTaskDialog> {
     final task = widget.task;
     final rule = widget.existingRecurrence;
     final draft = rule == null ? null : RecurrenceDraft.fromRule(rule);
-    _titleController = TextEditingController(text: task?.title ?? '');
+    _dueDate = widget.initialDueDate ?? task?.dueDate;
+    _titleController = TextEditingController(
+      text: widget.initialTitle ?? task?.title ?? '',
+    );
     _descriptionController = TextEditingController(
       text: task?.description ?? '',
     );
@@ -95,7 +106,7 @@ class _CreateTaskDialogState extends State<CreateTaskDialog> {
     _maxOccurrencesController = TextEditingController(
       text: draft?.maxOccurrences?.toString() ?? '',
     );
-    _dueDate = task?.dueDate;
+    _dueDate = widget.initialDueDate ?? task?.dueDate;
     _priority = task?.priority ?? 2;
     _repeats = rule?.isActive ?? false;
     _recurrenceType =

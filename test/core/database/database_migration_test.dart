@@ -121,7 +121,7 @@ void main() {
         expect(
           (await database.customSelect('PRAGMA user_version').getSingle())
               .read<int>('user_version'),
-          7,
+          8,
         );
         expect(
           await _tableNames(database),
@@ -377,7 +377,7 @@ void main() {
                   .customSelect('PRAGMA user_version')
                   .getSingle())
               .read<int>('user_version'),
-          7,
+          8,
         );
 
         final parent = await (migratedDatabase.select(
@@ -567,7 +567,65 @@ void main() {
     expect(
       (await database.customSelect('PRAGMA user_version').getSingle())
           .read<int>('user_version'),
-      7,
+      8,
+    );
+  });
+
+  test('migrates version 7 to reminders without changing task data', () async {
+    final database = SystumDatabase.test(
+      NativeDatabase.memory(
+        setup: (legacyDatabase) {
+          legacyDatabase.execute('''
+            CREATE TABLE tasks (
+              id TEXT NOT NULL PRIMARY KEY,
+              title TEXT NOT NULL,
+              completed INTEGER NOT NULL DEFAULT 0,
+              created_at INTEGER NOT NULL,
+              updated_at INTEGER NOT NULL
+            )
+          ''');
+          legacyDatabase.execute(
+            "INSERT INTO tasks (id, title, completed, created_at, updated_at) "
+            "VALUES ('task-1', 'Keep me', 0, 1000, 2000)",
+          );
+          legacyDatabase.execute('PRAGMA user_version = 7');
+        },
+      ),
+    );
+    addTearDown(database.close);
+
+    expect(await _tableNames(database), contains('reminders'));
+    expect(
+      await _indexNames(database),
+      containsAll(['reminders_task_id_idx', 'reminders_status_idx']),
+    );
+
+    final task = await database
+        .customSelect(
+          "SELECT id, title, completed FROM tasks WHERE id = 'task-1'",
+        )
+        .getSingle();
+    expect(task.read<String>('title'), 'Keep me');
+    expect(task.read<int>('completed'), 0);
+
+    await database.customStatement(
+      'INSERT INTO reminders '
+      '(id, task_id, schedule_type, scheduled_at_utc_ms, local_time_seconds, '
+      'interval, weekdays, start_date, end_date, max_occurrences, status, '
+      'cancellation_reason, cancelled_at_ms, created_at_ms, updated_at_ms) '
+      "VALUES ('reminder-1', 'task-1', 'once', 5000, NULL, 1, NULL, NULL, "
+      "NULL, NULL, 'scheduled', NULL, NULL, 1000, 2000)",
+    );
+    final reminder = await database.select(database.reminders).getSingle();
+    expect(reminder.taskId, 'task-1');
+    expect(reminder.scheduledAtUtcMs, 5000);
+
+    await database.customStatement("DELETE FROM tasks WHERE id = 'task-1'");
+    expect(await database.select(database.reminders).get(), isEmpty);
+    expect(
+      (await database.customSelect('PRAGMA user_version').getSingle())
+          .read<int>('user_version'),
+      8,
     );
   });
 }

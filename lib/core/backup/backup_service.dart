@@ -10,6 +10,7 @@ import '../../features/focus/models/pomodoro_settings.dart';
 import '../../features/focus/repository/focus_session_repository_support.dart';
 import '../../features/focus/repository/pomodoro_settings_store.dart';
 import '../../features/goals/models/goal_date.dart';
+import '../../features/reminders/models/reminder.dart';
 import '../../features/tasks/models/task_recurrence.dart';
 import '../../core/database/database.dart';
 import 'restore_journal.dart';
@@ -36,6 +37,7 @@ final class BackupPreview {
     required this.goalCount,
     required this.focusSessionCount,
     required this.focusIntervalCount,
+    this.reminderCount = 0,
   });
 
   final BackupVerificationStatus verification;
@@ -46,6 +48,7 @@ final class BackupPreview {
   final int goalCount;
   final int focusSessionCount;
   final int focusIntervalCount;
+  final int reminderCount;
 
   bool get isVerified => verification == BackupVerificationStatus.verified;
 }
@@ -96,6 +99,7 @@ final class BackupService {
       final occurrences = await _database
           .select(_database.taskOccurrences)
           .get();
+      final reminders = await _database.select(_database.reminders).get();
       return {
         'goals': goals.map(_goalToJson).toList(growable: false),
         'tasks': tasks.map(_taskToJson).toList(growable: false),
@@ -109,6 +113,7 @@ final class BackupService {
         'taskOccurrences': occurrences
             .map(_occurrenceToJson)
             .toList(growable: false),
+        'reminders': reminders.map(_reminderToJson).toList(growable: false),
       };
     });
     final preferences = await _settingsStore.exportData();
@@ -163,6 +168,7 @@ final class BackupService {
       goalCount: rows.goals.length,
       focusSessionCount: rows.sessions.length,
       focusIntervalCount: rows.intervals.length,
+      reminderCount: rows.reminders.length,
     );
   }
 
@@ -268,6 +274,7 @@ final class BackupService {
 
   Future<void> _replaceDatabase(_BackupRows rows) {
     return _database.transaction(() async {
+      await _database.delete(_database.reminders).go();
       await _database.delete(_database.focusSessionIntervals).go();
       await _database.delete(_database.focusSessions).go();
       await _database.delete(_database.taskOccurrences).go();
@@ -306,6 +313,11 @@ final class BackupService {
             .into(_database.taskOccurrences)
             .insert(occurrence.toCompanion());
       }
+      for (final reminder in rows.reminders) {
+        await _database
+            .into(_database.reminders)
+            .insert(reminder.toCompanion());
+      }
     });
   }
 
@@ -321,6 +333,7 @@ final class BackupService {
       final occurrences = await _database
           .select(_database.taskOccurrences)
           .get();
+      final reminders = await _database.select(_database.reminders).get();
       return {
         'goals': goals.map(_goalToJson).toList(),
         'tasks': tasks.map(_taskToJson).toList(),
@@ -328,6 +341,7 @@ final class BackupService {
         'focusIntervals': intervals.map(_intervalToJson).toList(),
         'taskRecurrenceRules': rules.map(_recurrenceRuleToJson).toList(),
         'taskOccurrences': occurrences.map(_occurrenceToJson).toList(),
+        'reminders': reminders.map(_reminderToJson).toList(),
       };
     });
     return _fingerprintData(data);
@@ -346,6 +360,7 @@ final class BackupService {
     'taskOccurrences': rows.occurrences
         .map(_occurrenceToJsonFromDomain)
         .toList(),
+    'reminders': rows.reminders.map(_reminderToJsonFromDomain).toList(),
   });
 
   static String _fingerprintData(Map<String, dynamic> data) {
@@ -381,13 +396,14 @@ final class BackupService {
   static String _randomSuffix() =>
       DateTime.now().millisecondsSinceEpoch.toRadixString(36);
 
-  static const _schemaVersion = 7;
+  static const _schemaVersion = 8;
 
-  /// Schema version recorded by older backup releases. The backup format
-  /// introduced before the task due-time columns remained at version 4 even
-  /// though task rows already contained due time/timezone fields, so those
-  /// documents remain readable.
-  static const int _legacySchemaVersion = 4;
+  /// Schema versions recorded by older backup releases that remain readable.
+  ///
+  /// Version 4 predates recurrence and due-time columns in the envelope but is
+  /// still accepted for legacy/unverified backups. Version 7 predates reminder
+  /// persistence and restores with an empty reminder list.
+  static const _legacySchemaVersions = {4, 7};
 
   static Map<String, Object?> _goalToJson(GoalRow goal) => {
     'id': goal.id,
@@ -496,6 +512,48 @@ final class BackupService {
         'updatedAtMs': occurrence.updatedAt,
       };
 
+  static Map<String, Object?> _reminderToJson(ReminderRow reminder) => {
+    'id': reminder.id,
+    'taskId': reminder.taskId,
+    'scheduleType': reminder.scheduleType,
+    'timezoneId': reminder.timezoneId,
+    'scheduledAtUtcMs': reminder.scheduledAtUtcMs,
+    'localTimeSeconds': reminder.localTimeSeconds,
+    'interval': reminder.interval,
+    'weekdays': reminder.weekdays,
+    'startDateMs': reminder.startDate,
+    'endDateMs': reminder.endDate,
+    'maxOccurrences': reminder.maxOccurrences,
+    'status': reminder.status,
+    'cancellationReason': reminder.cancellationReason,
+    'cancelledAtMs': reminder.cancelledAtMs,
+    'createdAtMs': reminder.createdAtMs,
+    'updatedAtMs': reminder.updatedAtMs,
+  };
+
+  static Map<String, Object?> _reminderToJsonFromDomain(Reminder reminder) => {
+    'id': reminder.id,
+    'taskId': reminder.taskId,
+    'scheduleType': reminder.scheduleType.name,
+    'timezoneId': reminder.timezoneId,
+    'scheduledAtUtcMs': reminder.scheduledAtUtc?.toUtc().millisecondsSinceEpoch,
+    'localTimeSeconds': reminder.localTimeSeconds,
+    'interval': reminder.interval,
+    'weekdays': reminder.weekdays,
+    'startDateMs': reminder.startDate == null
+        ? null
+        : recurrenceDateToEpochMs(reminder.startDate!),
+    'endDateMs': reminder.endDate == null
+        ? null
+        : recurrenceDateToEpochMs(reminder.endDate!),
+    'maxOccurrences': reminder.maxOccurrences,
+    'status': reminder.status.name,
+    'cancellationReason': reminder.cancellationReason?.name,
+    'cancelledAtMs': reminder.cancelledAtUtc?.toUtc().millisecondsSinceEpoch,
+    'createdAtMs': reminder.createdAt.toUtc().millisecondsSinceEpoch,
+    'updatedAtMs': reminder.updatedAt.toUtc().millisecondsSinceEpoch,
+  };
+
   static Map<String, Object?> _recurrenceRuleToJsonFromDomain(
     TaskRecurrenceRule rule,
   ) => {
@@ -549,7 +607,7 @@ final class BackupService {
         throw const BackupValidationException('Unsupported backup version.');
       }
       if (decoded['databaseSchemaVersion'] != _schemaVersion &&
-          decoded['databaseSchemaVersion'] != _legacySchemaVersion) {
+          !_legacySchemaVersions.contains(decoded['databaseSchemaVersion'])) {
         throw const BackupValidationException(
           'Backup database schema is not supported by this version.',
         );
@@ -667,12 +725,18 @@ final class BackupService {
       data,
       'taskOccurrences',
     ).map(_occurrenceFromJson).toList();
+    // Older backups predate reminder persistence. Missing lists are empty.
+    final reminders = _optionalList(
+      data,
+      'reminders',
+    ).map(_reminderFromJson).toList();
     _requireUnique(goals.map((row) => row.id), 'goal');
     _requireUnique(tasks.map((row) => row.id), 'task');
     _requireUnique(sessions.map((row) => row.id), 'focus session');
     _requireUnique(intervals.map((row) => row.id), 'focus interval');
     _requireUnique(rules.map((row) => row.id), 'recurrence rule');
     _requireUnique(occurrences.map((row) => row.id), 'occurrence');
+    _requireUnique(reminders.map((row) => row.id), 'reminder');
     final goalIds = goals.map((row) => row.id).toSet();
     final taskIds = tasks.map((row) => row.id).toSet();
     final sessionIds = sessions.map((row) => row.id).toSet();
@@ -734,6 +798,11 @@ final class BackupService {
         );
       }
     }
+    if (reminders.any((reminder) => !taskIds.contains(reminder.taskId))) {
+      throw const BackupValidationException(
+        'A reminder references a missing task.',
+      );
+    }
     final intervalsBySession = <String, List<FocusSessionInterval>>{};
     for (final row in intervals) {
       intervalsBySession
@@ -760,6 +829,7 @@ final class BackupService {
       intervals,
       rules,
       occurrences,
+      reminders,
       preferences,
     );
   }
@@ -898,6 +968,54 @@ final class BackupService {
     );
   }
 
+  static Reminder _reminderFromJson(dynamic value) {
+    final row = _map(value, 'reminder');
+    final rawStart = _nullableInt(row, 'startDateMs');
+    final rawEnd = _nullableInt(row, 'endDateMs');
+    if (rawStart != null) _requireCanonicalRecurrenceDate(rawStart);
+    if (rawEnd != null) _requireCanonicalRecurrenceDate(rawEnd);
+    final rawCancelledAt = _nullableInt(row, 'cancelledAtMs');
+    final reminder = Reminder(
+      id: _string(row, 'id'),
+      taskId: _string(row, 'taskId'),
+      scheduleType: _enumValue(
+        ReminderScheduleType.values,
+        _string(row, 'scheduleType'),
+        'scheduleType',
+      ),
+      timezoneId: _nullableString(row, 'timezoneId'),
+      scheduledAtUtc: _nullableDate(row, 'scheduledAtUtcMs'),
+      localTimeSeconds: _nullableInt(row, 'localTimeSeconds'),
+      interval: _int(row, 'interval'),
+      weekdays: _nullableInt(row, 'weekdays'),
+      startDate: rawStart == null ? null : recurrenceDateFromEpochMs(rawStart),
+      endDate: rawEnd == null ? null : recurrenceDateFromEpochMs(rawEnd),
+      maxOccurrences: _nullableInt(row, 'maxOccurrences'),
+      status: _enumValue(
+        ReminderStatus.values,
+        _string(row, 'status'),
+        'status',
+      ),
+      cancellationReason: _nullableEnumValue(
+        ReminderCancellationReason.values,
+        _nullableString(row, 'cancellationReason'),
+        'cancellationReason',
+      ),
+      cancelledAtUtc: rawCancelledAt == null
+          ? null
+          : DateTime.fromMillisecondsSinceEpoch(rawCancelledAt, isUtc: true),
+      createdAt: _date(row, 'createdAtMs'),
+      updatedAt: _date(row, 'updatedAtMs'),
+    );
+    final errors = reminder.validate();
+    if (errors.isNotEmpty) {
+      throw BackupValidationException(
+        'Reminder ${reminder.id} is invalid: ${errors.join(' ')}',
+      );
+    }
+    return reminder;
+  }
+
   static void _requireCanonicalRecurrenceDate(int milliseconds) {
     if (milliseconds % Duration.millisecondsPerDay != 0) {
       throw const BackupValidationException(
@@ -1008,6 +1126,15 @@ final class BackupService {
     }
     throw BackupValidationException('Backup field "$key" is invalid.');
   }
+
+  static T? _nullableEnumValue<T extends Enum>(
+    List<T> values,
+    String? name,
+    String key,
+  ) {
+    if (name == null) return null;
+    return _enumValue(values, name, key);
+  }
 }
 
 final class _BackupRows {
@@ -1018,6 +1145,7 @@ final class _BackupRows {
     this.intervals,
     this.rules,
     this.occurrences,
+    this.reminders,
     this.preferences,
   );
 
@@ -1027,6 +1155,7 @@ final class _BackupRows {
   final List<_BackupInterval> intervals;
   final List<TaskRecurrenceRule> rules;
   final List<TaskOccurrence> occurrences;
+  final List<Reminder> reminders;
   final Map<String, dynamic> preferences;
 }
 

@@ -12,6 +12,8 @@ import 'package:systum/features/focus/models/pomodoro_settings.dart';
 import 'package:systum/features/focus/repository/focus_session_repository_support.dart';
 import 'package:systum/features/focus/repository/pomodoro_settings_store.dart';
 import 'package:systum/core/backup/restore_journal.dart';
+import 'package:systum/features/reminders/models/reminder.dart';
+import 'package:systum/features/reminders/repository/reminder_repository.dart';
 import 'package:systum/features/tasks/models/task.dart';
 import 'package:systum/features/tasks/models/task_recurrence.dart';
 import 'package:systum/features/tasks/repository/task_repository.dart';
@@ -336,6 +338,211 @@ void main() {
       expect(occurrences.map((occurrence) => occurrence.ruleId), isNotEmpty);
     },
   );
+
+  test(
+    'round trips reminder scheduling intent through backup and restore',
+    () async {
+      final now = DateTime.utc(2026, 1, 1, 10);
+      await database
+          .into(database.tasks)
+          .insert(
+            TasksCompanion.insert(
+              id: 'task',
+              title: 'Task',
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
+      final repository = ReminderRepository(database);
+      await repository.create(
+        Reminder(
+          id: 'once',
+          taskId: 'task',
+          scheduleType: ReminderScheduleType.once,
+          timezoneId: 'America/New_York',
+          scheduledAtUtc: DateTime.utc(2026, 1, 2, 14, 30),
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+      await repository.create(
+        Reminder(
+          id: 'weekly',
+          taskId: 'task',
+          scheduleType: ReminderScheduleType.weekly,
+          localTimeSeconds: 8 * 3600,
+          interval: 2,
+          weekdays: 0x7f,
+          startDate: DateTime.utc(2026, 2, 1),
+          endDate: DateTime.utc(2026, 8, 1),
+          maxOccurrences: 12,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+
+      final encoded = await service.createBackup();
+      final document = jsonDecode(encoded) as Map<String, dynamic>;
+      final data = document['data'] as Map<String, dynamic>;
+      expect(data['reminders'], hasLength(2));
+      expect((await service.inspect(encoded)).reminderCount, 2);
+
+      await database.delete(database.reminders).go();
+      await database.delete(database.tasks).go();
+      await service.restore(encoded, overwriteExisting: true);
+
+      final restored = await repository.getAll();
+      expect(restored.map((reminder) => reminder.id), ['once', 'weekly']);
+      final once = restored.singleWhere((reminder) => reminder.id == 'once');
+      expect(once.scheduledAtUtc, DateTime.utc(2026, 1, 2, 14, 30));
+      expect(once.timezoneId, 'America/New_York');
+      final weekly = restored.singleWhere(
+        (reminder) => reminder.id == 'weekly',
+      );
+      expect(weekly.scheduleType, ReminderScheduleType.weekly);
+      expect(weekly.localTimeSeconds, 8 * 3600);
+      expect(weekly.interval, 2);
+      expect(weekly.weekdays, 0x7f);
+      expect(weekly.startDate, DateTime.utc(2026, 2, 1));
+      expect(weekly.endDate, DateTime.utc(2026, 8, 1));
+      expect(weekly.maxOccurrences, 12);
+    },
+  );
+
+  test(
+    'accepts schema 7 backups without a reminder list and clears reminders',
+    () async {
+      final now = DateTime.utc(2026, 1, 1, 10);
+      await database
+          .into(database.tasks)
+          .insert(
+            TasksCompanion.insert(
+              id: 'task',
+              title: 'Task',
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
+      await ReminderRepository(database).create(
+        Reminder(
+          id: 'reminder',
+          taskId: 'task',
+          scheduleType: ReminderScheduleType.once,
+          scheduledAtUtc: DateTime.utc(2026, 1, 2),
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+      final legacy =
+          jsonDecode(await service.createBackup()) as Map<String, dynamic>;
+      ((legacy['data'] as Map<String, dynamic>).remove('reminders'));
+      legacy['databaseSchemaVersion'] = 7;
+      for (final key in [
+        'appVersion',
+        'exportState',
+        'payloadEncoding',
+        'payloadHashAlgorithm',
+        'payloadLengthBytes',
+        'payloadSha256',
+      ]) {
+        legacy.remove(key);
+      }
+
+      final validation = await service.validate(jsonEncode(legacy));
+      expect(validation.status, BackupVerificationStatus.legacyUnverified);
+
+      await service.restore(jsonEncode(legacy), overwriteExisting: true);
+
+      expect(await database.select(database.reminders).get(), isEmpty);
+      expect((await database.select(database.tasks).get()).single.id, 'task');
+    },
+  );
+
+  test('rejects invalid reminder payloads', () async {
+    final now = DateTime.utc(2026, 1, 1, 10);
+    await database
+        .into(database.tasks)
+        .insert(
+          TasksCompanion.insert(
+            id: 'task',
+            title: 'Task',
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+    final base =
+        jsonDecode(await service.createBackup()) as Map<String, dynamic>;
+
+    Map<String, dynamic> envelope() {
+      final document = jsonDecode(jsonEncode(base)) as Map<String, dynamic>;
+      for (final key in [
+        'appVersion',
+        'exportState',
+        'payloadEncoding',
+        'payloadHashAlgorithm',
+        'payloadLengthBytes',
+        'payloadSha256',
+      ]) {
+        document.remove(key);
+      }
+      return document;
+    }
+
+    Map<String, dynamic> reminder({
+      String id = 'reminder',
+      String taskId = 'task',
+      String scheduleType = 'once',
+      Object? scheduledAtUtcMs = 1000,
+    }) {
+      return {
+        'id': id,
+        'taskId': taskId,
+        'scheduleType': scheduleType,
+        'scheduledAtUtcMs': scheduledAtUtcMs,
+        'localTimeSeconds': null,
+        'interval': 1,
+        'weekdays': null,
+        'startDateMs': null,
+        'endDateMs': null,
+        'maxOccurrences': null,
+        'status': 'scheduled',
+        'cancellationReason': null,
+        'cancelledAtMs': null,
+        'createdAtMs': 0,
+        'updatedAtMs': 0,
+      };
+    }
+
+    for (final document in <Map<String, dynamic>>[
+      () {
+        final value = envelope();
+        (value['data'] as Map<String, dynamic>)['reminders'] = [
+          reminder(taskId: 'missing'),
+        ];
+        return value;
+      }(),
+      () {
+        final value = envelope();
+        (value['data'] as Map<String, dynamic>)['reminders'] = [
+          reminder(scheduledAtUtcMs: null),
+        ];
+        return value;
+      }(),
+      () {
+        final value = envelope();
+        (value['data'] as Map<String, dynamic>)['reminders'] = [
+          reminder(),
+          reminder(),
+        ];
+        return value;
+      }(),
+    ]) {
+      await expectLater(
+        service.validate(jsonEncode(document)),
+        throwsA(isA<BackupValidationException>()),
+      );
+    }
+  });
 
   test(
     'accepts backups recorded with the legacy database schema version',

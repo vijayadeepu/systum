@@ -39,6 +39,33 @@ Notable changes to Systum are recorded here.
   occurrence completion, reopening, rescheduling, and soft deletion.
 - Read-only recurrence diagnostics for rules, occurrences, validity, and
   duplicate/orphan records.
+- Persistent task reminders: schema v8 `reminders` table and indexes with a
+  v7→v8 migration; one-time absolute UTC and recurring local wall-clock
+  schedules with optional IANA timezone, UTC-midnight dates, interval, weekday
+  mask, and occurrence cap; scheduled/cancelled status with retained
+  cancellation metadata; transactional cancellation on task completion,
+  reactivation on reopen, and cascade on task deletion; repository and
+  Riverpod providers.
+- Full backup/restore and schema-7 legacy compatibility for reminders, plus
+  read-only reminder diagnostics and explicit exclusion from selective task
+  exports.
+- Android notification delivery for persisted reminders: `flutter_local_notifications`
+  scheduler adapter with deterministic FNV-1a notification IDs, notification
+  channel, runtime permission request, one-time and repeating schedules, cancel
+  and reschedule through stable IDs, and task lifecycle integration through the
+  reminder providers. Scheduling and delivery failures are logged without
+  modifying persisted reminder state.
+- Android notification reconciliation (D4): startup reconciliation from
+  persisted SQLite reminders, reboot boot receiver plus startup re-derivation,
+  idempotent cancel-and-replace with deterministic IDs, permission-denied
+  skip and restored-permission re-schedule.
+- Daily planning & calendar (E1–E4): daily agenda projecting persisted tasks
+  and recurring task occurrences (Today, previous/next day, date selection,
+  overdue and due-on-date sections, completion, quick creation); transient
+  per-day task ordering; lightweight monthly calendar with navigation, Today
+  shortcut, task-date indicators, and agenda navigation; factual daily summary
+  (completed/incomplete/overdue tasks, focus sessions, focused time, tasks
+  worked on) derived entirely from persisted data.
 
 ### Fixed
 

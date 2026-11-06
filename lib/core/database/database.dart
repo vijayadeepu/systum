@@ -6,6 +6,7 @@ import '../../features/focus/models/focus_session_table.dart';
 import '../../features/focus/models/focus_session_interval.dart';
 import '../../features/focus/models/focus_session_mode.dart';
 import '../../features/focus/models/focus_session_status.dart';
+import '../../features/reminders/models/reminder_table.dart';
 import '../../features/tasks/models/task_table.dart';
 import 'database_connection.dart';
 
@@ -19,6 +20,7 @@ part 'database.g.dart';
     FocusSessionIntervals,
     TaskRecurrenceRules,
     TaskOccurrences,
+    Reminders,
   ],
 )
 final class SystumDatabase extends _$SystumDatabase {
@@ -27,7 +29,7 @@ final class SystumDatabase extends _$SystumDatabase {
   SystumDatabase.test(super.executor);
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -35,6 +37,7 @@ final class SystumDatabase extends _$SystumDatabase {
       await transaction(() async {
         await migrator.createAll();
         await _createFocusIndexes();
+        await _createReminderIndexes();
       });
     },
     onUpgrade: (migrator, from, to) => transaction(() async {
@@ -71,6 +74,13 @@ final class SystumDatabase extends _$SystumDatabase {
       if (from < 7) {
         await _createRecurrenceIndexes();
       }
+      // Version 1 databases already receive this table from createAll above.
+      if (from >= 2 && from < 8) {
+        await migrator.createTable(reminders);
+      }
+      if (from < 8) {
+        await _createReminderIndexes();
+      }
     }),
     beforeOpen: (_) async {
       await customStatement('PRAGMA foreign_keys = ON');
@@ -79,6 +89,17 @@ final class SystumDatabase extends _$SystumDatabase {
 
   Future<void> _createFocusIndexes() async {
     for (final statement in FocusSchemaV4.indexStatements) {
+      await customStatement(statement);
+    }
+  }
+
+  Future<void> _createReminderIndexes() async {
+    for (final statement in const [
+      'CREATE INDEX IF NOT EXISTS reminders_task_id_idx '
+          'ON reminders (task_id)',
+      'CREATE INDEX IF NOT EXISTS reminders_status_idx '
+          'ON reminders (status)',
+    ]) {
       await customStatement(statement);
     }
   }

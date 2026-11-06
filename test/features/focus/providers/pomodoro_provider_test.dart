@@ -435,6 +435,159 @@ void main() {
       expect(await container.read(pomodoroCycleProvider.future), isNull);
       expect(await FocusRepository(database).getHistory(), hasLength(1));
     });
+
+    test('running long break is recovered after process restart', () async {
+      final container = createContainer();
+      addTearDown(container.dispose);
+      await load(container);
+      final cycle = container.read(pomodoroCycleProvider.notifier);
+      await cycle.startCycle();
+
+      for (var round = 1; round <= 3; round++) {
+        await completeCurrent(container);
+        await cycle.startNextSegment();
+        await completeCurrent(container);
+        if (round < 3) {
+          await cycle.startNextSegment();
+        }
+      }
+
+      await cycle.startNextSegment();
+      await completeCurrent(container);
+      final longBreak = await cycle.startNextSegment();
+      expect(longBreak.session.mode, FocusSessionMode.longBreak);
+      expect(longBreak.session.status, FocusSessionStatus.running);
+
+      container.dispose();
+
+      final recovered = createContainer();
+      addTearDown(recovered.dispose);
+      await load(recovered);
+
+      final recoveredSession = await recovered.read(
+        focusSessionProvider.future,
+      );
+      expect(recoveredSession?.session.mode, FocusSessionMode.longBreak);
+      expect(recoveredSession?.session.status, FocusSessionStatus.running);
+
+      final recoveredCycle = await recovered.read(pomodoroCycleProvider.future);
+      expect(recoveredCycle?.isActive, isTrue);
+      expect(recoveredCycle?.round, 4);
+      expect(recoveredCycle?.nextMode, isNull);
+    });
+
+    test('paused long break is recovered after process restart', () async {
+      final container = createContainer();
+      addTearDown(container.dispose);
+      await load(container);
+      final cycle = container.read(pomodoroCycleProvider.notifier);
+      await cycle.startCycle();
+
+      for (var round = 1; round <= 3; round++) {
+        await completeCurrent(container);
+        await cycle.startNextSegment();
+        await completeCurrent(container);
+        if (round < 3) {
+          await cycle.startNextSegment();
+        }
+      }
+
+      await cycle.startNextSegment();
+      await completeCurrent(container);
+      final longBreak = await cycle.startNextSegment();
+      now = now.add(const Duration(seconds: 1));
+      await container
+          .read(focusSessionProvider.notifier)
+          .pauseSession(longBreak.session.id);
+
+      expect(
+        (await container.read(focusSessionProvider.future))?.session.status,
+        FocusSessionStatus.paused,
+      );
+
+      container.dispose();
+
+      final recovered = createContainer();
+      addTearDown(recovered.dispose);
+      await load(recovered);
+
+      final recoveredSession = await recovered.read(
+        focusSessionProvider.future,
+      );
+      expect(recoveredSession?.session.mode, FocusSessionMode.longBreak);
+      expect(recoveredSession?.session.status, FocusSessionStatus.paused);
+
+      final recoveredCycle = await recovered.read(pomodoroCycleProvider.future);
+      expect(recoveredCycle?.isActive, isTrue);
+      expect(recoveredCycle?.round, 4);
+    });
+
+    test('completed long break marks cycle complete after restart', () async {
+      final container = createContainer();
+      addTearDown(container.dispose);
+      await load(container);
+      final cycle = container.read(pomodoroCycleProvider.notifier);
+      await cycle.startCycle();
+
+      for (var round = 1; round <= 3; round++) {
+        await completeCurrent(container);
+        await cycle.startNextSegment();
+        await completeCurrent(container);
+        if (round < 3) {
+          await cycle.startNextSegment();
+        }
+      }
+
+      await cycle.startNextSegment();
+      await completeCurrent(container);
+      final longBreak = await cycle.startNextSegment();
+      now = now.add(const Duration(seconds: 1));
+      await container
+          .read(focusSessionProvider.notifier)
+          .completeSession(longBreak.session.id);
+
+      container.dispose();
+
+      final recovered = createContainer();
+      addTearDown(recovered.dispose);
+      await load(recovered);
+
+      final recoveredCycle = await recovered.read(pomodoroCycleProvider.future);
+      expect(recoveredCycle?.isComplete, isTrue);
+      expect(recoveredCycle?.nextMode, isNull);
+      expect(recoveredCycle?.round, 4);
+    });
+
+    test(
+      'running session recovered then completed produces one history entry',
+      () async {
+        final firstContainer = createContainer();
+        await load(firstContainer);
+        final cycle = firstContainer.read(pomodoroCycleProvider.notifier);
+        final started = await cycle.startCycle();
+        firstContainer.dispose();
+
+        final recoveredContainer = createContainer();
+        addTearDown(recoveredContainer.dispose);
+        await load(recoveredContainer);
+
+        final recovered = await recoveredContainer.read(
+          focusSessionProvider.future,
+        );
+        expect(recovered?.session.id, started.session.id);
+        expect(recovered?.session.status, FocusSessionStatus.running);
+
+        now = now.add(const Duration(seconds: 1));
+        await recoveredContainer
+            .read(focusSessionProvider.notifier)
+            .completeSession(started.session.id);
+
+        final history = await FocusRepository(database).getHistory();
+        expect(history, hasLength(1));
+        expect(history.single.session.id, started.session.id);
+        expect(history.single.session.status, FocusSessionStatus.completed);
+      },
+    );
   });
 }
 

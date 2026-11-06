@@ -141,8 +141,8 @@ void main() {
       await database.close();
     });
 
-    test('schema version is 7', () async {
-      expect(database.schemaVersion, 7);
+    test('schema version is 8', () async {
+      expect(database.schemaVersion, 8);
     });
 
     test('existing tasks preserve due date after migration', () async {

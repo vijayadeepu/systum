@@ -75,11 +75,12 @@ final class SelectiveImportResult {
 /// Type-selective JSON/CSV portability. Full database restore remains a
 /// separate, explicit workflow in [BackupService].
 ///
-/// Task selections export task templates only. Recurrence rules and their
-/// generated occurrences are intentionally outside the selective task dataset;
-/// importing a selective task selection therefore restores standalone task
-/// templates without recurring behavior. Use the full backup/restore workflow
-/// when recurring task history must round trip.
+/// Task selections export task templates only. Recurrence rules, their
+/// generated occurrences, and task reminders are intentionally outside the
+/// selective task dataset; importing a selective task selection therefore
+/// restores standalone task templates without recurring behavior or reminder
+/// scheduling intent. Use the full backup/restore workflow when recurrence
+/// history or reminders must round trip.
 final class SelectivePortabilityService {
   SelectivePortabilityService(
     this._database,

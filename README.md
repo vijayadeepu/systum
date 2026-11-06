@@ -77,6 +77,8 @@ This project emphasizes:
 * Target dates with local calendar-day handling
 * Recurrence rules, bounded occurrence generation, occurrence lifecycle, and
   task create/edit integration
+* Reminder scheduling intent persistence with one-time and recurring schedules,
+  task-lifecycle cancellation/reactivation, and full backup integration
 * Repository, provider, and widget tests
 * Focus session domain model and interval-based duration calculations
 * Focus schema v4 with transactional upgrade and migration coverage
@@ -110,9 +112,19 @@ This project emphasizes:
 * Automatic backup files are not encrypted. They remain in app-private storage
   and are removed when the application's private data is cleared.
 * The full local backup payload includes tasks, goals, recurrence rules and
-  occurrences, and Focus history, so recurring tasks survive a verified
-  restore; legacy version-1 backups without recurrence payload lists remain
-  accepted as legacy/unverified and restore as non-recurring task data.
+  occurrences, reminders, and Focus history, so recurring tasks and reminders
+  survive a verified restore; legacy versions without recurrence or reminder
+  payload lists remain accepted as legacy/unverified and restore with those
+  datasets empty.
+* Selective task exports intentionally omit recurrence rules, generated
+  occurrences, and reminders. Importing a selective task export restores
+  standalone task templates without recurring behavior or reminder scheduling
+  intent; use full backup/restore when those datasets must round trip.
+* Reminder persistence stores scheduling intent only. Android notification
+  delivery is implemented for scheduled reminders; when runtime notification
+  permission is denied, no notification is delivered and the persisted reminder
+  row remains intact. Android-side reboot, timezone, and permission-state
+  reconciliation are not implemented yet.
 * SQLite and SharedPreferences remain separate persistence systems. Restore
   uses a durable journal and startup reconciliation to guarantee that an
   interrupted restore is not reported as complete; it does not provide a
@@ -146,6 +158,10 @@ lib/
 │   │   ├── screens/
 │   │   └── widgets/
 │   ├── home/
+│   ├── reminders/
+│   │   ├── models/
+│   │   ├── providers/
+│   │   └── repository/
 │   ├── focus/
 │   │   ├── models/
 │   │   ├── providers/
@@ -337,11 +353,11 @@ action can resume publication after the user selects a destination.
 Open **Backup and restore → Run data diagnostics**. Diagnostics execute
 read-only checks for SQLite integrity, foreign keys, schema version, required
 tables/columns/indexes, task relationships, focus session/interval invariants,
-and Pomodoro settings. Results are classified as healthy, warning, error, or
-inconclusive, and list affected record identifiers. Systum never repairs or
-deletes data automatically. If a check is inconclusive, restart the app and run
-it again; preserve the current data and restore only a verified backup after
-reviewing the findings.
+reminder schedules, and Pomodoro settings. Results are classified as healthy,
+warning, error, or inconclusive, and list affected record identifiers. Systum
+never repairs or deletes data automatically. If a check is inconclusive,
+restart the app and run it again; preserve the current data and restore only a
+verified backup after reviewing the findings.
 
 ## Recurring Tasks and Occurrences
 
@@ -373,6 +389,60 @@ Systum supports recurring tasks with an SQLite source of truth:
 
 These semantics are covered by repository, provider, and widget tests in
 `test/features/tasks/` and migration coverage for schema version 7.
+
+## Task Reminders
+
+Reminder persistence is the SQLite source of truth for future notification
+delivery. Schema version 8 adds the `reminders` table and indexes, and reminder
+rows are tied to their task with a cascading foreign key.
+
+* One-time reminders store an absolute UTC instant. Recurring reminders store a
+  local wall-clock time, an optional IANA timezone (null means device-local),
+  UTC-midnight start/end dates, an interval, weekly weekday bits, and an
+  optional maximum occurrence count. This keeps the user's intended local time
+  stable across timezone and daylight-saving changes.
+* Status is `scheduled` or `cancelled`; cancelled rows are retained with a
+  reason (`user` or `taskCompleted`) and timestamp for history and diagnostics.
+* Completing a task cancels its scheduled reminders in the same transaction.
+  Reopening the task reactivates only reminders cancelled by task completion;
+  explicit user cancellations remain cancelled. Deleting a task cascades to its
+  reminders.
+* Reminder writes reject missing or completed tasks. Full backups include
+  reminder rows; selective task exports intentionally exclude them.
+
+Reminder persistence is covered by domain, repository, provider, migration,
+backup, diagnostics, and selective-portability tests.
+
+## Android Notification Delivery (D3)
+
+`lib/features/reminders/notifications/` isolates the Android scheduler behind a
+small interface, so the reminder domain never touches plugin types directly.
+
+* Notification IDs are deterministic FNV-1a digests of the persisted reminder ID
+  and are reused across restarts, reschedules, and edits.
+* One-time reminders schedule their absolute UTC instant; recurring reminders
+  reuse the persisted recurrence projection for an exact daily or weekly repeat
+  and fall back to the next occurrence for shapes Android cannot repeat exactly.
+* Cancellation replaces the prior schedule before installing the new intent.
+* Task completion, reopen, and deletion mirror persisted reminder state through
+  the existing reminder providers.
+* Runtime notification permission is requested through the scheduler; denial
+  leaves the persisted reminder scheduled without an Android schedule.
+
+Android reboot, startup, timezone-change, permission-state, duplicate-job, and
+missing-notification repair remain deferred to D4.
+
+## Android Notification Reconciliation (D4)
+
+D4 adds an idempotent reconciliation layer on top of the D3 scheduling path.
+
+* Startup reconciliation derives the desired Android state from persisted
+  SQLite reminders and applies it through the scheduler.
+* Reboot re-arms via the boot receiver and the next startup reconciliation
+  re-derives the same desired state, keeping cancel-and-replace idempotent.
+* Permission denied during reconciliation leaves the persisted reminder intact
+  without an Android schedule; a later reconciliation schedules again once the
+  permission is restored.
 
 ## Task Hierarchy and Goal Rules
 

@@ -100,6 +100,24 @@ final class DatabaseDiagnosticsService {
       'created_at',
       'updated_at',
     },
+    'reminders': {
+      'id',
+      'task_id',
+      'schedule_type',
+      'timezone_id',
+      'scheduled_at_utc_ms',
+      'local_time_seconds',
+      'interval',
+      'weekdays',
+      'start_date',
+      'end_date',
+      'max_occurrences',
+      'status',
+      'cancellation_reason',
+      'cancelled_at_ms',
+      'created_at_ms',
+      'updated_at_ms',
+    },
     'focus_sessions': {
       'id',
       'task_id',
@@ -137,6 +155,8 @@ final class DatabaseDiagnosticsService {
     'task_occurrences_rule_id_idx',
     'task_occurrences_occurrence_date_idx',
     'task_occurrences_rule_date_unique_idx',
+    'reminders_task_id_idx',
+    'reminders_status_idx',
   };
 
   Future<DiagnosticReport> run() async {
@@ -146,6 +166,7 @@ final class DatabaseDiagnosticsService {
       await _schemaStructure(),
       await _taskRelationships(),
       await _recurrenceConsistency(),
+      await _reminderConsistency(),
       await _focusConsistency(),
       await _pomodoroConsistency(),
     ];
@@ -429,6 +450,135 @@ final class DatabaseDiagnosticsService {
       );
     } on Object catch (error) {
       return _inconclusive('Recurrence rules and occurrences', error);
+    }
+  }
+
+  Future<DiagnosticIssue> _reminderConsistency() async {
+    try {
+      final rows = await _database.customSelect('''
+        SELECT r.id AS record_id, 'missing_task' AS kind
+        FROM reminders r
+        LEFT JOIN tasks t ON t.id = r.task_id
+        WHERE t.id IS NULL
+        UNION ALL
+        SELECT id AS record_id, 'invalid_schedule_type' AS kind
+        FROM reminders
+        WHERE schedule_type NOT IN ('once', 'daily', 'weekly', 'monthly',
+                                    'custom')
+        UNION ALL
+        SELECT id AS record_id, 'invalid_status' AS kind
+        FROM reminders
+        WHERE status NOT IN ('scheduled', 'cancelled')
+        UNION ALL
+        SELECT id AS record_id, 'invalid_cancellation_reason' AS kind
+        FROM reminders
+        WHERE cancellation_reason IS NOT NULL
+          AND cancellation_reason NOT IN ('user', 'taskCompleted')
+        UNION ALL
+        SELECT id AS record_id, 'blank_timezone' AS kind
+        FROM reminders
+        WHERE timezone_id IS NOT NULL AND length(trim(timezone_id)) = 0
+        UNION ALL
+        SELECT id AS record_id, 'updated_before_created' AS kind
+        FROM reminders
+        WHERE updated_at_ms < created_at_ms
+        UNION ALL
+        SELECT id AS record_id, 'once_missing_trigger' AS kind
+        FROM reminders
+        WHERE schedule_type = 'once' AND scheduled_at_utc_ms IS NULL
+        UNION ALL
+        SELECT id AS record_id, 'once_has_recurrence' AS kind
+        FROM reminders
+        WHERE schedule_type = 'once'
+          AND (local_time_seconds IS NOT NULL OR weekdays IS NOT NULL
+               OR start_date IS NOT NULL OR end_date IS NOT NULL
+               OR max_occurrences IS NOT NULL OR interval <> 1)
+        UNION ALL
+        SELECT id AS record_id, 'recurring_has_trigger' AS kind
+        FROM reminders
+        WHERE schedule_type <> 'once' AND scheduled_at_utc_ms IS NOT NULL
+        UNION ALL
+        SELECT id AS record_id, 'invalid_local_time' AS kind
+        FROM reminders
+        WHERE schedule_type <> 'once'
+          AND (local_time_seconds IS NULL OR local_time_seconds < 0
+               OR local_time_seconds > 86399)
+        UNION ALL
+        SELECT id AS record_id, 'recurring_missing_start' AS kind
+        FROM reminders
+        WHERE schedule_type <> 'once' AND start_date IS NULL
+        UNION ALL
+        SELECT id AS record_id, 'invalid_interval' AS kind
+        FROM reminders
+        WHERE schedule_type <> 'once' AND (interval < 1 OR interval > 999)
+        UNION ALL
+        SELECT id AS record_id, 'invalid_weekdays' AS kind
+        FROM reminders
+        WHERE schedule_type = 'weekly'
+          AND (weekdays IS NULL OR weekdays <= 0 OR weekdays > 127)
+        UNION ALL
+        SELECT id AS record_id, 'weekdays_without_weekly' AS kind
+        FROM reminders
+        WHERE schedule_type <> 'weekly' AND weekdays IS NOT NULL
+        UNION ALL
+        SELECT id AS record_id, 'end_before_start' AS kind
+        FROM reminders
+        WHERE end_date IS NOT NULL AND start_date IS NOT NULL
+          AND end_date < start_date
+        UNION ALL
+        SELECT id AS record_id, 'invalid_max_occurrences' AS kind
+        FROM reminders
+        WHERE max_occurrences IS NOT NULL
+          AND (max_occurrences < 1 OR max_occurrences > 10000)
+        UNION ALL
+        SELECT id AS record_id, 'non_canonical_date' AS kind
+        FROM reminders
+        WHERE (start_date IS NOT NULL AND start_date % 86400000 <> 0)
+           OR (end_date IS NOT NULL AND end_date % 86400000 <> 0)
+        UNION ALL
+        SELECT id AS record_id, 'cancelled_without_reason' AS kind
+        FROM reminders
+        WHERE status = 'cancelled' AND cancellation_reason IS NULL
+        UNION ALL
+        SELECT id AS record_id, 'cancelled_without_time' AS kind
+        FROM reminders
+        WHERE status = 'cancelled' AND cancelled_at_ms IS NULL
+        UNION ALL
+        SELECT id AS record_id, 'scheduled_with_cancel_metadata' AS kind
+        FROM reminders
+        WHERE status = 'scheduled'
+          AND (cancellation_reason IS NOT NULL OR cancelled_at_ms IS NOT NULL)
+        UNION ALL
+        SELECT r.id AS record_id, 'scheduled_for_completed_task' AS kind
+        FROM reminders r
+        JOIN tasks t ON t.id = r.task_id
+        WHERE r.status = 'scheduled' AND t.completed = 1
+      ''').get();
+      final records =
+          rows
+              .map(
+                (row) =>
+                    '${row.read<String>('record_id')}:${row.read<String>('kind')}',
+              )
+              .toSet()
+              .toList()
+            ..sort();
+      return DiagnosticIssue(
+        name: 'Reminder schedules',
+        severity: records.isEmpty
+            ? DiagnosticSeverity.healthy
+            : DiagnosticSeverity.error,
+        message: records.isEmpty
+            ? 'Reminder schedules and task lifecycle state are consistent.'
+            : 'Reminder persistence records require review.',
+        records: records,
+        guidance: records.isEmpty
+            ? null
+            : 'Review reminders on the affected tasks. Do not edit reminder '
+                  'rows manually; restore a verified backup if needed.',
+      );
+    } on Object catch (error) {
+      return _inconclusive('Reminder schedules', error);
     }
   }
 

@@ -167,6 +167,122 @@ void main() {
     expect(find.textContaining('offline'), findsOneWidget);
     expect(find.text('Retry'), findsOneWidget);
   });
+
+  testWidgets('multiple sessions on same day accumulate focused time', (
+    tester,
+  ) async {
+    final start = DateTime(2026, 10, 31, 10).toUtc().millisecondsSinceEpoch;
+    await tester.pumpWidget(
+      app(
+        () async => [
+          _transition(
+            id: 's1',
+            status: FocusSessionStatus.completed,
+            start: start,
+            end: start + 300000,
+          ),
+          _transition(
+            id: 's2',
+            status: FocusSessionStatus.completed,
+            start: start + 600000,
+            end: start + 900000,
+          ),
+        ],
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Focused'), findsOneWidget);
+    expect(find.text('10m 00s'), findsOneWidget);
+    expect(find.text('Completed'), findsWidgets);
+    expect(find.textContaining('2'), findsWidgets);
+  });
+
+  testWidgets('interrupted session contributes actual active time', (
+    tester,
+  ) async {
+    final start = DateTime(2026, 10, 31, 10).toUtc().millisecondsSinceEpoch;
+    await tester.pumpWidget(
+      app(
+        () async => [
+          _transition(
+            id: 'interrupted',
+            status: FocusSessionStatus.interrupted,
+            start: start,
+            end: start + 120000,
+          ),
+        ],
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Focused'), findsOneWidget);
+    expect(find.text('2m 00s'), findsOneWidget);
+    expect(find.text('Interrupted'), findsWidgets);
+    expect(find.text('1'), findsWidgets);
+  });
+
+  testWidgets('session crossing midnight renders without error', (
+    tester,
+  ) async {
+    // Starts late Oct 31 local time, ends early Nov 1 local time — crosses
+    // a date boundary. Converted through UTC to match page expectations.
+    final start = DateTime(
+      2026,
+      10,
+      31,
+      22,
+      0,
+      0,
+    ).toUtc().millisecondsSinceEpoch;
+    final end = DateTime(2026, 11, 1, 2, 0, 0).toUtc().millisecondsSinceEpoch;
+    await tester.pumpWidget(
+      app(
+        () async => [
+          _transition(
+            id: 'cross',
+            status: FocusSessionStatus.completed,
+            start: start,
+            end: end,
+          ),
+        ],
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Should render without error regardless of timezone.
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    expect(find.textContaining('error'), findsNothing);
+  });
+
+  testWidgets('session at midnight start of day appears on that day', (
+    tester,
+  ) async {
+    // Exactly midnight local time on Oct 31.
+    final start = DateTime(
+      2026,
+      10,
+      31,
+      0,
+      0,
+      0,
+    ).toUtc().millisecondsSinceEpoch;
+    await tester.pumpWidget(
+      app(
+        () async => [
+          _transition(
+            id: 'midnight',
+            status: FocusSessionStatus.completed,
+            start: start,
+            end: start + 3600000,
+          ),
+        ],
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Standalone'), findsAtLeast(1));
+  });
 }
 
 FocusSessionTransition _transition({

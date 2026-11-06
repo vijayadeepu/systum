@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/database/database.dart';
 import '../../../shared/providers/database_provider.dart';
+import '../../../shared/providers/logger_provider.dart';
+import '../../reminders/notifications/reminder_delivery_provider.dart';
 import '../models/task.dart';
 import '../models/task_filter.dart';
 import '../models/task_hierarchy.dart';
@@ -416,12 +418,72 @@ class TaskNotifier extends AsyncNotifier<List<TaskRow>> {
 
   /// Deletes a task. Direct subtasks of a parent are promoted to standalone
   /// tasks by the repository and the refreshed state reflects the promotion.
-  Future<void> deleteTask(String id) {
-    return _mutate(() => _repository.delete(id));
+  Future<void> deleteTask(String id) async {
+    // Reminder rows cascade with the task, so capture their notification
+    // identities before the delete and cancel them afterwards.
+    final reminderIds = await _reminderIdsForTask(id);
+    await _mutate(() => _repository.delete(id));
+    await _cancelReminderNotifications(reminderIds);
   }
 
   Future<void> setCompleted(String id, bool completed) async {
     await _mutate(() => _repository.setCompleted(id, completed));
+    // D2 owns completion/reopen reminder state. Mirror the persisted result
+    // into Android without re-deriving the lifecycle rules here.
+    await _syncTaskReminders(id);
+  }
+
+  /// Independently completes or reopens one occurrence of a recurring task.
+  ///
+  /// The recurrence rule and every sibling occurrence are left untouched.
+  Future<void> setOccurrenceCompleted(String id, bool completed) async {
+    await _mutate(() => _repository.setOccurrenceCompleted(id, completed));
+  }
+
+  /// Moves one occurrence to [dueDate] without touching its rule or any
+  /// sibling occurrence.
+  Future<void> rescheduleOccurrence(String id, DateTime dueDate) async {
+    await _mutate(() => _repository.rescheduleOccurrence(id, dueDate));
+  }
+
+  Future<List<String>> _reminderIdsForTask(String taskId) async {
+    try {
+      return await ref
+          .read(reminderDeliveryProvider)
+          .reminderIdsForTask(taskId);
+    } catch (error, stackTrace) {
+      _logNotificationIssue(error, stackTrace);
+      return const [];
+    }
+  }
+
+  Future<void> _syncTaskReminders(String taskId) async {
+    try {
+      await ref.read(reminderDeliveryProvider).syncTask(taskId);
+    } catch (error, stackTrace) {
+      _logNotificationIssue(error, stackTrace);
+    }
+  }
+
+  Future<void> _cancelReminderNotifications(
+    Iterable<String> reminderIds,
+  ) async {
+    try {
+      await ref.read(reminderDeliveryProvider).cancelReminderIds(reminderIds);
+    } catch (error, stackTrace) {
+      _logNotificationIssue(error, stackTrace);
+    }
+  }
+
+  void _logNotificationIssue(Object error, StackTrace stackTrace) {
+    ref
+        .read(loggerProvider)
+        .w(
+          'Reminder notification sync failed after a task mutation. '
+          'The task change was kept.',
+          error: error,
+          stackTrace: stackTrace,
+        );
   }
 
   Future<void> refresh() async {

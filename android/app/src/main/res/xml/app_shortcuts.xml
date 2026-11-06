@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Launcher shortcut: open the existing task creation flow. -->
+    <shortcut
+        android:shortcutId="create_task"
+        android:enabled="true"
+        android:icon="@mipmap/systum_launcher"
+        android:shortcutShortLabel="@string/shortcut_create_task_short"
+        android:shortcutLongLabel="@string/shortcut_create_task_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.systum.app"
+            android:targetClass="com.systum.app.MainActivity"
+            android:data="systum://app/shortcut/create-task" />
+    </shortcut>
+    <!-- Launcher shortcut: open the existing daily agenda. -->
+    <shortcut
+        android:shortcutId="open_agenda"
+        android:enabled="true"
+        android:icon="@mipmap/systum_launcher"
+        android:shortcutShortLabel="@string/shortcut_agenda_short"
+        android:shortcutLongLabel="@string/shortcut_agenda_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.systum.app"
+            android:targetClass="com.systum.app.MainActivity"
+            android:data="systum://app/shortcut/agenda" />
+    </shortcut>
+</shortcuts>

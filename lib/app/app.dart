@@ -3,7 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/backup/backup_provider.dart';
 import '../core/theme/app_theme.dart';
+import '../features/reminders/notifications/reminder_reconciliation_provider.dart';
+import '../features/focus/providers/focus_recovery_provider.dart';
 import '../features/tasks/providers/recurrence_provider.dart';
+import 'android_intent_listener.dart';
 import 'router.dart';
 
 class SystumApp extends ConsumerWidget {
@@ -44,13 +47,23 @@ class SystumApp extends ConsumerWidget {
     ref.watch(automaticBackupProvider);
     // Recover any occurrence dates missed while the app was not running.
     ref.watch(recurrenceRecoveryProvider);
-    return MaterialApp.router(
-      title: 'Systum',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.light,
-      darkTheme: AppTheme.dark,
-      themeMode: ThemeMode.system,
-      routerConfig: appRouter,
+    // Reconcile persisted reminders into Android schedules at startup. The
+    // result is observed but never gates startup; later lifecycle actions
+    // reconcile through the same idempotent path.
+    ref.watch(reminderStartupReconciliationProvider);
+    // Recover persisted Focus state at startup. The result is observed but
+    // never gates startup; later lifecycle actions reconcile through the same
+    // idempotent path.
+    ref.watch(focusStartupRecoveryProvider);
+    return AndroidIntentListener(
+      child: MaterialApp.router(
+        title: 'Systum',
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.light,
+        darkTheme: AppTheme.dark,
+        themeMode: ThemeMode.system,
+        routerConfig: appRouter,
+      ),
     );
   }
 }

@@ -114,6 +114,34 @@ void main() {
     },
   );
 
+  test('keeps reminders out of selective task exports', () async {
+    await seed();
+    await database
+        .into(database.reminders)
+        .insert(
+          RemindersCompanion.insert(
+            id: 'reminder',
+            taskId: 'task',
+            scheduleType: 'once',
+            scheduledAtUtcMs: const Value(1000),
+            createdAtMs: 0,
+            updatedAtMs: 0,
+          ),
+        );
+
+    final encoded = await service.exportJson({
+      SelectiveDataset.tasks,
+      SelectiveDataset.goals,
+      SelectiveDataset.focusHistory,
+    });
+    final data =
+        (jsonDecode(encoded) as Map<String, dynamic>)['data']
+            as Map<String, dynamic>;
+
+    expect(data.containsKey('reminders'), isFalse);
+    expect((data['tasks'] as List), isNotEmpty);
+  });
+
   test(
     'keeps goal and hierarchy references when those datasets are selected',
     () async {

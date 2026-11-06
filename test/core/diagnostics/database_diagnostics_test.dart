@@ -35,11 +35,12 @@ void main() {
         'Schema structure',
         'Task relationships',
         'Recurrence rules and occurrences',
+        'Reminder schedules',
         'Focus sessions and intervals',
         'Pomodoro settings',
       ]),
     );
-    expect(issue(report, 'Schema structure').message, contains('Schema v7'));
+    expect(issue(report, 'Schema structure').message, contains('Schema v8'));
     expect(await database.select(database.tasks).get(), isEmpty);
     expect(await database.select(database.goals).get(), isEmpty);
     expect(await database.select(database.focusSessions).get(), isEmpty);
@@ -60,7 +61,7 @@ void main() {
       expect(schema.records, contains('missing_index:tasks_goal_id_idx'));
       expect(schema.records, contains('missing_column:tasks.category'));
       expect(schema.records, contains('missing_table:focus_session_intervals'));
-      expect(schema.records, contains('schema_version:expected 7 got 3'));
+      expect(schema.records, contains('schema_version:expected 8 got 3'));
       expect(schema.guidance, isNotNull);
     },
   );
@@ -131,6 +132,54 @@ void main() {
     expect(focus.records, contains('empty:terminal_without_intervals'));
     expect(focus.records, contains('running:unresolved_open_interval'));
     expect(focus.guidance, isNotNull);
+  });
+
+  test('reports inconsistent reminder schedules', () async {
+    await database.customStatement('PRAGMA foreign_keys = OFF');
+    await database.customStatement('''
+      INSERT INTO tasks
+        (id, title, completed, created_at, updated_at, priority)
+      VALUES ('completed', 'Completed', 1, 0, 0, 2)
+    ''');
+    await database.customStatement('''
+      INSERT INTO reminders
+        (id, task_id, schedule_type, timezone_id, scheduled_at_utc_ms,
+         local_time_seconds, interval, weekdays, start_date, end_date,
+         max_occurrences, status, cancellation_reason, cancelled_at_ms,
+         created_at_ms, updated_at_ms)
+      VALUES
+        ('missing-task', 'absent', 'once', NULL, 1000, NULL, 1, NULL, NULL,
+         NULL, NULL, 'scheduled', NULL, NULL, 0, 0),
+        ('bad-type', 'completed', 'hourly', NULL, 1000, NULL, 1, NULL, NULL,
+         NULL, NULL, 'scheduled', NULL, NULL, 0, 0),
+        ('once-missing', 'completed', 'once', NULL, NULL, NULL, 1, NULL, NULL,
+         NULL, NULL, 'scheduled', NULL, NULL, 0, 0),
+        ('bad-recurring', 'completed', 'weekly', NULL, NULL, 90000, 0, 0, NULL,
+         NULL, NULL, 'scheduled', NULL, NULL, 0, 0),
+        ('completed-task', 'completed', 'once', NULL, 1000, NULL, 1, NULL,
+         NULL, NULL, NULL, 'scheduled', NULL, NULL, 0, 0),
+        ('bad-metadata', 'completed', 'once', '', 1000, NULL, 1, NULL, NULL,
+         NULL, NULL, 'scheduled', NULL, NULL, 10, 0)
+    ''');
+    await database.customStatement('PRAGMA foreign_keys = ON');
+
+    final report = await run();
+    final reminders = issue(report, 'Reminder schedules');
+
+    expect(reminders.severity, DiagnosticSeverity.error);
+    expect(reminders.records, contains('missing-task:missing_task'));
+    expect(reminders.records, contains('bad-type:invalid_schedule_type'));
+    expect(reminders.records, contains('once-missing:once_missing_trigger'));
+    expect(reminders.records, contains('bad-recurring:invalid_local_time'));
+    expect(reminders.records, contains('bad-recurring:invalid_interval'));
+    expect(reminders.records, contains('bad-recurring:invalid_weekdays'));
+    expect(
+      reminders.records,
+      contains('completed-task:scheduled_for_completed_task'),
+    );
+    expect(reminders.records, contains('bad-metadata:blank_timezone'));
+    expect(reminders.records, contains('bad-metadata:updated_before_created'));
+    expect(reminders.guidance, isNotNull);
   });
 
   test('reports out-of-bounds persisted Pomodoro settings', () async {

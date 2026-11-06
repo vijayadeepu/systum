@@ -17,6 +17,7 @@ import '../providers/task_provider.dart';
 import '../widgets/create_task_dialog.dart';
 import '../widgets/task_delete_dialog.dart';
 import '../widgets/task_tile.dart';
+import 'daily_agenda_page.dart';
 
 class TaskListPage extends ConsumerWidget {
   const TaskListPage({super.key});
@@ -77,6 +78,11 @@ class TaskListPage extends ConsumerWidget {
             onPressed: () => context.push('/goals'),
             icon: const Icon(Icons.flag_outlined),
             label: const Text('Goals'),
+          ),
+          IconButton(
+            tooltip: 'Daily agenda',
+            onPressed: () => context.go(DailyAgendaPage.route),
+            icon: const Icon(Icons.event_rounded),
           ),
           IconButton(
             tooltip: focusState.hasError

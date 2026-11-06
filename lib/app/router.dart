@@ -5,6 +5,7 @@ import '../features/goals/screens/goal_list_page.dart';
 import '../features/focus/screens/focus_page.dart';
 import '../features/focus/screens/focus_history_page.dart';
 import '../features/home/home_page.dart';
+import '../features/tasks/screens/daily_agenda_page.dart';
 import '../features/tasks/screens/task_detail_page.dart';
 import '../core/backup/backup_page.dart';
 import '../core/backup/selective_portability_page.dart';
@@ -42,6 +43,14 @@ final appRouter = GoRouter(
       path: '/task/:taskId',
       builder: (context, state) =>
           TaskDetailPage(taskId: state.pathParameters['taskId']!),
+    ),
+    GoRoute(
+      path: '/agenda',
+      builder: (context, state) => const DailyAgendaPage(),
+    ),
+    GoRoute(
+      path: '/calendar',
+      builder: (context, state) => const MonthCalendarPage(),
     ),
   ],
 );

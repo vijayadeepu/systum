@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 
 import '../../../core/database/database.dart';
 import '../../../shared/utils/id_generator.dart';
+import '../../reminders/models/reminder.dart';
 import '../models/task.dart';
 import '../models/task_filter.dart';
 import '../models/task_recurrence.dart';
@@ -105,16 +106,56 @@ class TaskRepository {
   }
 
   Future<void> setCompleted(String id, bool completed) async {
-    final now = DateTime.now();
-    final updatedRows =
-        await (_database.update(
-          _database.tasks,
-        )..where((tasks) => tasks.id.equals(id))).write(
-          TasksCompanion(completed: Value(completed), updatedAt: Value(now)),
-        );
-    if (updatedRows == 0) {
-      throw TaskRelationshipException('Task "$id" does not exist.');
-    }
+    final now = DateTime.now().toUtc();
+    await _database.transaction(() async {
+      final updatedRows =
+          await (_database.update(
+            _database.tasks,
+          )..where((tasks) => tasks.id.equals(id))).write(
+            TasksCompanion(completed: Value(completed), updatedAt: Value(now)),
+          );
+      if (updatedRows == 0) {
+        throw TaskRelationshipException('Task "$id" does not exist.');
+      }
+
+      // Reminder scheduling intent follows task lifecycle: completing a task
+      // suppresses its scheduled reminders, and reopening it reactivates only
+      // those suppressed by completion. Explicit user cancellations remain.
+      if (completed) {
+        await (_database.update(_database.reminders)..where(
+              (reminder) =>
+                  reminder.taskId.equals(id) &
+                  reminder.status.equals(ReminderStatus.scheduled.name),
+            ))
+            .write(
+              RemindersCompanion(
+                status: Value(ReminderStatus.cancelled.name),
+                cancellationReason: Value(
+                  ReminderCancellationReason.taskCompleted.name,
+                ),
+                cancelledAtMs: Value(now.millisecondsSinceEpoch),
+                updatedAtMs: Value(now.millisecondsSinceEpoch),
+              ),
+            );
+      } else {
+        await (_database.update(_database.reminders)..where(
+              (reminder) =>
+                  reminder.taskId.equals(id) &
+                  reminder.status.equals(ReminderStatus.cancelled.name) &
+                  reminder.cancellationReason.equals(
+                    ReminderCancellationReason.taskCompleted.name,
+                  ),
+            ))
+            .write(
+              RemindersCompanion(
+                status: Value(ReminderStatus.scheduled.name),
+                cancellationReason: const Value(null),
+                cancelledAtMs: const Value(null),
+                updatedAtMs: Value(now.millisecondsSinceEpoch),
+              ),
+            );
+      }
+    });
   }
 
   /// Returns focus sessions linked to [taskId], newest first.

@@ -34,6 +34,8 @@ class _PomodoroCyclePanelState extends ConsumerState<PomodoroCyclePanel> {
         : cycle.requiresRecovery
         ? 'This segment did not advance the cycle. '
               'Round ${cycle.round} remains available to retry.'
+        : cycle.nextMode == null
+        ? 'Session in progress — round ${cycle.round}'
         : cycle.nextMode == FocusSessionMode.pomodoro
         ? 'Next: Focus — Round ${cycle.nextRound} of ${PomodoroSettings.focusRoundsBeforeLongBreak}.'
         : 'Next: ${_segmentLabel(cycle.nextMode!)} after round ${cycle.round}.';

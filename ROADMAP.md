@@ -5,7 +5,7 @@ Statuses are limited to: **Not Started**, **In Progress**, **Implemented**,
 **Blocked**. A milestone is never marked Verified without its required
 automated and physical acceptance evidence.
 
-Last updated: 2026-11-03.
+Last updated: 2026-11-06.
 
 | ID | Workstream | Status | Dependencies | Evidence and remaining work |
 |---|---|---|---|---|
@@ -30,13 +30,13 @@ Last updated: 2026-11-03.
 | B8 | Task module integration and final QA | Automated Tests Passed | B5, B6, B7 | Final integration and quality gate complete. All 8 user journeys verified through existing tests. UI consistency verified across task list, detail, creation, editing screens. Complete regression suite: 489 tests pass after D1. Flutter analyze: no errors/warnings (only pre-existing infos). Formatting: clean. Diff check: clean. Debug APK build: successful. |
 | D1 | Due-date/time model + countdown | Automated Tests Passed | B7 | Schema v5: adds dueTime (seconds since midnight) and dueTimezone (IANA ID) columns to tasks. Task model updated with dueTime/dueTimezone fields. Backup/restore and selective portability updated for new fields. CountdownProvider computes live countdowns with timezone-aware deadlines using a single shared timer (auto-dispose). TaskTile displays countdown ("Xd Yh Zm", "Due now", "Overdue"). 21 new tests (13 repository + 8 provider), all passing. Full suite: 489 tests. |
 | C1–C3 | Recurrence | Automated Tests Passed | D1 | Implemented: daily, weekly selected weekdays, monthly, and custom every-N-days domain rules; task create/edit integration; schema v7 rule/occurrence tables, unique indexes, UTC-midnight normalization, and migration from v6; bounded idempotent generation with 90-day horizon, end date and max occurrence enforcement, stop/resume, occurrence lifecycle, and startup recovery. Repository, provider, widget, migration, diagnostics, and backup tests added; full suite passing after final recurrence QA. |
-| D2 | Reminder persistence | Not Started | D1 | No reminder model or migration. |
-| D3 | Android notifications | Not Started | D2 | No notification permission, scheduling, or actions. |
-| D4 | Notification reconciliation | Not Started | D3 | No notification reconciliation. |
-| E1 | Today dashboard | Not Started | B4, D1 | No Today screen. |
-| E2 | Daily agenda | Not Started | E1 | No date-grouped agenda or rescheduling. |
-| E3 | Calendar | Not Started | E2 | No monthly calendar. |
-| E4 | Factual execution summaries | Not Started | E1 | History provides raw totals; dedicated factual summary screen not built. |
+| D2 | Reminder persistence | Automated Tests Passed | D1 | Schema v8 adds the `reminders` table with task/index relationships and a v7→v8 migration. One-time reminders store absolute UTC instants; recurring reminders reuse recurrence schedule types with local wall-clock time, optional IANA timezone, UTC-midnight start/end dates, interval, weekday mask, and occurrence cap. Scheduled/cancelled status retains cancellation reason and timestamp. Task completion cancels scheduled reminders transactionally; reopening reactivates only completion-cancelled rows; task deletion cascades. Reminder repository/providers, full backup/restore, diagnostics, and selective-export exclusion are implemented and tested. Android notification delivery (D3) and reconciliation (D4) remain deferred. |
+| D3 | Android notifications | Automated Tests Passed | D2 | Implemented: deterministic FNV-1a notification IDs from persisted reminder IDs, `flutter_local_notifications` adapter with channel, runtime permission, one-time and repeating schedules, cancel/reschedule via stable IDs, task lifecycle integration through reminder providers. Full suite: 594 tests pass. Remaining: physical device notification validation; reboot/reconciliation deferred to D4. |
+| D4 | Notification reconciliation | Automated Tests Passed | D3 | Implemented: startup reconciliation from persisted SQLite reminders via `reminderStartupReconciliationProvider`, reboot boot receiver plus startup re-derivation, idempotent cancel-and-replace with deterministic IDs, permission-denied skip and restored-permission re-schedule. Focused reconciliation suite in `test/features/reminders/notifications/`. Remaining: physical device validation. |
+| E1 | Today dashboard | Automated Tests Passed | B4, D1 | Implemented: daily agenda page (Today, previous/next day, date selection, overdue + due-on-date sections, task completion, quick creation) backed by `dailyAgendaProvider`. |
+| E2 | Daily agenda | Automated Tests Passed | E1 | Implemented: reorder tasks per day (transient `dayOrderProvider`), reschedule task/occurrence via repository APIs, completion via existing task providers, recurrence semantics preserved through existing occurrence table. |
+| E3 | Calendar | Automated Tests Passed | E2 | Implemented: lightweight monthly calendar with month navigation, Today shortcut, date indicators for task dates, date selection opens daily agenda. |
+| E4 | Factual execution summaries | Automated Tests Passed | E1 | Implemented: `dailySummaryProvider` with completed/incomplete/overdue tasks, focus sessions, focused time, tasks worked on — derived from persisted data, no scores or recommendations. |
 | F1 | Physical focus lifecycle validation | Physical Validation Pending | Android device | Existing automated recovery tests pass; process death, restart, clock-change, and background validation not physically executed. |
 | F2–F4 | Focus UX, Pomodoro refinements, history | In Progress | F1 | Active controls, Pomodoro settings/cycle, and indexed history exist. Bounded history/date-range loading and large-history measurements remain. |
 | G1 | App shortcuts | Not Started | H1 | No Android shortcuts. |
