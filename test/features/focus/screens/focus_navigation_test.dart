@@ -88,7 +88,9 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byTooltip('Focus'));
+    await tester.tap(find.byIcon(Icons.menu_rounded));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Focus'));
     await tester.pumpAndSettle();
     expect(find.text('Focus route'), findsOneWidget);
   });
@@ -126,8 +128,9 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.byTooltip('Resume focus'), findsOneWidget);
-    await tester.tap(find.byTooltip('Resume focus'));
+    await tester.tap(find.byIcon(Icons.menu_rounded));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Focus'));
     await tester.pumpAndSettle();
     expect(find.text('Recovered focus route'), findsOneWidget);
   });

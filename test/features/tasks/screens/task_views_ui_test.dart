@@ -96,13 +96,16 @@ void main() {
     );
   }
 
-  testWidgets('view selector chips are visible', (tester) async {
+  testWidgets('filter row shows All Today Upcoming Overdue labels', (
+    tester,
+  ) async {
     await insertTasks();
     await pumpTaskList(tester);
 
+    expect(find.text('All'), findsOneWidget);
     expect(find.text('Today'), findsOneWidget);
+    expect(find.text('Upcoming'), findsOneWidget);
     expect(find.text('Overdue'), findsOneWidget);
-    expect(find.text('Completed'), findsOneWidget);
   });
 
   testWidgets('all view shows all tasks', (tester) async {
@@ -158,39 +161,21 @@ void main() {
     expect(find.text('Task undated'), findsNothing);
   });
 
-  testWidgets('completed view shows only completed tasks', (tester) async {
-    await insertTasks();
-    await pumpTaskList(tester);
-
-    await tester.tap(find.text('Completed').first);
-    await tester.pumpAndSettle();
-
-    expect(find.text('Task completed'), findsOneWidget);
-    expect(find.text('Task due today'), findsNothing);
-    expect(find.text('Task overdue'), findsNothing);
-    expect(find.text('Task upcoming'), findsNothing);
-    expect(find.text('Task undated'), findsNothing);
-  });
-
   testWidgets('switching views does not clear filters', (tester) async {
     await insertTasks();
     await pumpTaskList(tester);
 
-    // Switch to completed view
-    await tester.tap(find.text('Completed').first);
-    await tester.pumpAndSettle();
-    expect(find.text('Task completed'), findsOneWidget);
-
-    // Switch to today view - completed filter still applies, so no tasks
-    // match (completed task due today is filtered out by view=today + no
-    // status filter, but wait - view=today shows tasks due today regardless
-    // of completion... actually view=today just filters by due date, no
-    // status filter is applied)
+    // Switch to today view
     await tester.tap(find.text('Today').first);
     await tester.pumpAndSettle();
-
     expect(find.text('Task due today'), findsOneWidget);
-    expect(find.text('Task completed'), findsOneWidget);
+
+    // Switch to overdue view - today filter still applies
+    await tester.tap(find.text('Overdue').first);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Task overdue'), findsOneWidget);
+    expect(find.text('Task due today'), findsNothing);
   });
 
   testWidgets('empty state shows for view with no tasks', (tester) async {
@@ -213,7 +198,7 @@ void main() {
     expect(find.text('Task due today'), findsNothing);
 
     // Switch back to all view
-    await tester.tap(find.text('All tasks').first);
+    await tester.tap(find.text('All').first);
     await tester.pumpAndSettle();
 
     // Should show all tasks again

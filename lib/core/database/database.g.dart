@@ -4658,6 +4658,556 @@ class RemindersCompanion extends UpdateCompanion<ReminderRow> {
   }
 }
 
+class $HydrationEntriesTable extends HydrationEntries
+    with TableInfo<$HydrationEntriesTable, HydrationEntryRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $HydrationEntriesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _amountMsMeta = const VerificationMeta(
+    'amountMs',
+  );
+  @override
+  late final GeneratedColumn<int> amountMs = GeneratedColumn<int>(
+    'amount_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _loggedAtMsMeta = const VerificationMeta(
+    'loggedAtMs',
+  );
+  @override
+  late final GeneratedColumn<int> loggedAtMs = GeneratedColumn<int>(
+    'logged_at_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, amountMs, loggedAtMs];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'hydration_entries';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<HydrationEntryRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('amount_ms')) {
+      context.handle(
+        _amountMsMeta,
+        amountMs.isAcceptableOrUnknown(data['amount_ms']!, _amountMsMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_amountMsMeta);
+    }
+    if (data.containsKey('logged_at_ms')) {
+      context.handle(
+        _loggedAtMsMeta,
+        loggedAtMs.isAcceptableOrUnknown(
+          data['logged_at_ms']!,
+          _loggedAtMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_loggedAtMsMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  HydrationEntryRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return HydrationEntryRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      amountMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}amount_ms'],
+      )!,
+      loggedAtMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}logged_at_ms'],
+      )!,
+    );
+  }
+
+  @override
+  $HydrationEntriesTable createAlias(String alias) {
+    return $HydrationEntriesTable(attachedDatabase, alias);
+  }
+}
+
+class HydrationEntryRow extends DataClass
+    implements Insertable<HydrationEntryRow> {
+  final String id;
+
+  /// Amount consumed in milliliters.
+  final int amountMs;
+
+  /// Timestamp when the intake was logged (UTC epoch milliseconds).
+  final int loggedAtMs;
+  const HydrationEntryRow({
+    required this.id,
+    required this.amountMs,
+    required this.loggedAtMs,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['amount_ms'] = Variable<int>(amountMs);
+    map['logged_at_ms'] = Variable<int>(loggedAtMs);
+    return map;
+  }
+
+  HydrationEntriesCompanion toCompanion(bool nullToAbsent) {
+    return HydrationEntriesCompanion(
+      id: Value(id),
+      amountMs: Value(amountMs),
+      loggedAtMs: Value(loggedAtMs),
+    );
+  }
+
+  factory HydrationEntryRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return HydrationEntryRow(
+      id: serializer.fromJson<String>(json['id']),
+      amountMs: serializer.fromJson<int>(json['amountMs']),
+      loggedAtMs: serializer.fromJson<int>(json['loggedAtMs']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'amountMs': serializer.toJson<int>(amountMs),
+      'loggedAtMs': serializer.toJson<int>(loggedAtMs),
+    };
+  }
+
+  HydrationEntryRow copyWith({String? id, int? amountMs, int? loggedAtMs}) =>
+      HydrationEntryRow(
+        id: id ?? this.id,
+        amountMs: amountMs ?? this.amountMs,
+        loggedAtMs: loggedAtMs ?? this.loggedAtMs,
+      );
+  HydrationEntryRow copyWithCompanion(HydrationEntriesCompanion data) {
+    return HydrationEntryRow(
+      id: data.id.present ? data.id.value : this.id,
+      amountMs: data.amountMs.present ? data.amountMs.value : this.amountMs,
+      loggedAtMs: data.loggedAtMs.present
+          ? data.loggedAtMs.value
+          : this.loggedAtMs,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('HydrationEntryRow(')
+          ..write('id: $id, ')
+          ..write('amountMs: $amountMs, ')
+          ..write('loggedAtMs: $loggedAtMs')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, amountMs, loggedAtMs);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is HydrationEntryRow &&
+          other.id == this.id &&
+          other.amountMs == this.amountMs &&
+          other.loggedAtMs == this.loggedAtMs);
+}
+
+class HydrationEntriesCompanion extends UpdateCompanion<HydrationEntryRow> {
+  final Value<String> id;
+  final Value<int> amountMs;
+  final Value<int> loggedAtMs;
+  final Value<int> rowid;
+  const HydrationEntriesCompanion({
+    this.id = const Value.absent(),
+    this.amountMs = const Value.absent(),
+    this.loggedAtMs = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  HydrationEntriesCompanion.insert({
+    required String id,
+    required int amountMs,
+    required int loggedAtMs,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       amountMs = Value(amountMs),
+       loggedAtMs = Value(loggedAtMs);
+  static Insertable<HydrationEntryRow> custom({
+    Expression<String>? id,
+    Expression<int>? amountMs,
+    Expression<int>? loggedAtMs,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (amountMs != null) 'amount_ms': amountMs,
+      if (loggedAtMs != null) 'logged_at_ms': loggedAtMs,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  HydrationEntriesCompanion copyWith({
+    Value<String>? id,
+    Value<int>? amountMs,
+    Value<int>? loggedAtMs,
+    Value<int>? rowid,
+  }) {
+    return HydrationEntriesCompanion(
+      id: id ?? this.id,
+      amountMs: amountMs ?? this.amountMs,
+      loggedAtMs: loggedAtMs ?? this.loggedAtMs,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (amountMs.present) {
+      map['amount_ms'] = Variable<int>(amountMs.value);
+    }
+    if (loggedAtMs.present) {
+      map['logged_at_ms'] = Variable<int>(loggedAtMs.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('HydrationEntriesCompanion(')
+          ..write('id: $id, ')
+          ..write('amountMs: $amountMs, ')
+          ..write('loggedAtMs: $loggedAtMs, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $HydrationSettingsTableTable extends HydrationSettingsTable
+    with TableInfo<$HydrationSettingsTableTable, HydrationSettingsRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $HydrationSettingsTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _hydrationEnabledMeta = const VerificationMeta(
+    'hydrationEnabled',
+  );
+  @override
+  late final GeneratedColumn<bool> hydrationEnabled = GeneratedColumn<bool>(
+    'hydration_enabled',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("hydration_enabled" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _dailyTargetMlMeta = const VerificationMeta(
+    'dailyTargetMl',
+  );
+  @override
+  late final GeneratedColumn<int> dailyTargetMl = GeneratedColumn<int>(
+    'daily_target_ml',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(2500),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, hydrationEnabled, dailyTargetMl];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'hydration_settings_table';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<HydrationSettingsRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('hydration_enabled')) {
+      context.handle(
+        _hydrationEnabledMeta,
+        hydrationEnabled.isAcceptableOrUnknown(
+          data['hydration_enabled']!,
+          _hydrationEnabledMeta,
+        ),
+      );
+    }
+    if (data.containsKey('daily_target_ml')) {
+      context.handle(
+        _dailyTargetMlMeta,
+        dailyTargetMl.isAcceptableOrUnknown(
+          data['daily_target_ml']!,
+          _dailyTargetMlMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  HydrationSettingsRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return HydrationSettingsRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      hydrationEnabled: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}hydration_enabled'],
+      )!,
+      dailyTargetMl: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}daily_target_ml'],
+      )!,
+    );
+  }
+
+  @override
+  $HydrationSettingsTableTable createAlias(String alias) {
+    return $HydrationSettingsTableTable(attachedDatabase, alias);
+  }
+}
+
+class HydrationSettingsRow extends DataClass
+    implements Insertable<HydrationSettingsRow> {
+  final String id;
+
+  /// Whether hydration tracking is enabled (shows hydration card on home).
+  final bool hydrationEnabled;
+
+  /// Daily hydration target in milliliters. Defaults to 2500 ml (2.5 L).
+  final int dailyTargetMl;
+  const HydrationSettingsRow({
+    required this.id,
+    required this.hydrationEnabled,
+    required this.dailyTargetMl,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['hydration_enabled'] = Variable<bool>(hydrationEnabled);
+    map['daily_target_ml'] = Variable<int>(dailyTargetMl);
+    return map;
+  }
+
+  HydrationSettingsTableCompanion toCompanion(bool nullToAbsent) {
+    return HydrationSettingsTableCompanion(
+      id: Value(id),
+      hydrationEnabled: Value(hydrationEnabled),
+      dailyTargetMl: Value(dailyTargetMl),
+    );
+  }
+
+  factory HydrationSettingsRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return HydrationSettingsRow(
+      id: serializer.fromJson<String>(json['id']),
+      hydrationEnabled: serializer.fromJson<bool>(json['hydrationEnabled']),
+      dailyTargetMl: serializer.fromJson<int>(json['dailyTargetMl']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'hydrationEnabled': serializer.toJson<bool>(hydrationEnabled),
+      'dailyTargetMl': serializer.toJson<int>(dailyTargetMl),
+    };
+  }
+
+  HydrationSettingsRow copyWith({
+    String? id,
+    bool? hydrationEnabled,
+    int? dailyTargetMl,
+  }) => HydrationSettingsRow(
+    id: id ?? this.id,
+    hydrationEnabled: hydrationEnabled ?? this.hydrationEnabled,
+    dailyTargetMl: dailyTargetMl ?? this.dailyTargetMl,
+  );
+  HydrationSettingsRow copyWithCompanion(HydrationSettingsTableCompanion data) {
+    return HydrationSettingsRow(
+      id: data.id.present ? data.id.value : this.id,
+      hydrationEnabled: data.hydrationEnabled.present
+          ? data.hydrationEnabled.value
+          : this.hydrationEnabled,
+      dailyTargetMl: data.dailyTargetMl.present
+          ? data.dailyTargetMl.value
+          : this.dailyTargetMl,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('HydrationSettingsRow(')
+          ..write('id: $id, ')
+          ..write('hydrationEnabled: $hydrationEnabled, ')
+          ..write('dailyTargetMl: $dailyTargetMl')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, hydrationEnabled, dailyTargetMl);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is HydrationSettingsRow &&
+          other.id == this.id &&
+          other.hydrationEnabled == this.hydrationEnabled &&
+          other.dailyTargetMl == this.dailyTargetMl);
+}
+
+class HydrationSettingsTableCompanion
+    extends UpdateCompanion<HydrationSettingsRow> {
+  final Value<String> id;
+  final Value<bool> hydrationEnabled;
+  final Value<int> dailyTargetMl;
+  final Value<int> rowid;
+  const HydrationSettingsTableCompanion({
+    this.id = const Value.absent(),
+    this.hydrationEnabled = const Value.absent(),
+    this.dailyTargetMl = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  HydrationSettingsTableCompanion.insert({
+    required String id,
+    this.hydrationEnabled = const Value.absent(),
+    this.dailyTargetMl = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id);
+  static Insertable<HydrationSettingsRow> custom({
+    Expression<String>? id,
+    Expression<bool>? hydrationEnabled,
+    Expression<int>? dailyTargetMl,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (hydrationEnabled != null) 'hydration_enabled': hydrationEnabled,
+      if (dailyTargetMl != null) 'daily_target_ml': dailyTargetMl,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  HydrationSettingsTableCompanion copyWith({
+    Value<String>? id,
+    Value<bool>? hydrationEnabled,
+    Value<int>? dailyTargetMl,
+    Value<int>? rowid,
+  }) {
+    return HydrationSettingsTableCompanion(
+      id: id ?? this.id,
+      hydrationEnabled: hydrationEnabled ?? this.hydrationEnabled,
+      dailyTargetMl: dailyTargetMl ?? this.dailyTargetMl,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (hydrationEnabled.present) {
+      map['hydration_enabled'] = Variable<bool>(hydrationEnabled.value);
+    }
+    if (dailyTargetMl.present) {
+      map['daily_target_ml'] = Variable<int>(dailyTargetMl.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('HydrationSettingsTableCompanion(')
+          ..write('id: $id, ')
+          ..write('hydrationEnabled: $hydrationEnabled, ')
+          ..write('dailyTargetMl: $dailyTargetMl, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$SystumDatabase extends GeneratedDatabase {
   _$SystumDatabase(QueryExecutor e) : super(e);
   $SystumDatabaseManager get managers => $SystumDatabaseManager(this);
@@ -4672,6 +5222,11 @@ abstract class _$SystumDatabase extends GeneratedDatabase {
     this,
   );
   late final $RemindersTable reminders = $RemindersTable(this);
+  late final $HydrationEntriesTable hydrationEntries = $HydrationEntriesTable(
+    this,
+  );
+  late final $HydrationSettingsTableTable hydrationSettingsTable =
+      $HydrationSettingsTableTable(this);
   late final Index tasksGoalIdIdx = Index(
     'tasks_goal_id_idx',
     'CREATE INDEX tasks_goal_id_idx ON tasks (goal_id)',
@@ -4720,6 +5275,8 @@ abstract class _$SystumDatabase extends GeneratedDatabase {
     taskRecurrenceRules,
     taskOccurrences,
     reminders,
+    hydrationEntries,
+    hydrationSettingsTable,
     tasksGoalIdIdx,
     tasksParentTaskIdIdx,
     taskRecurrenceRulesParentTaskIdIdx,
@@ -8388,6 +8945,365 @@ typedef $$RemindersTableProcessedTableManager =
       ReminderRow,
       PrefetchHooks Function({bool taskId})
     >;
+typedef $$HydrationEntriesTableCreateCompanionBuilder =
+    HydrationEntriesCompanion Function({
+      required String id,
+      required int amountMs,
+      required int loggedAtMs,
+      Value<int> rowid,
+    });
+typedef $$HydrationEntriesTableUpdateCompanionBuilder =
+    HydrationEntriesCompanion Function({
+      Value<String> id,
+      Value<int> amountMs,
+      Value<int> loggedAtMs,
+      Value<int> rowid,
+    });
+
+class $$HydrationEntriesTableFilterComposer
+    extends Composer<_$SystumDatabase, $HydrationEntriesTable> {
+  $$HydrationEntriesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get amountMs => $composableBuilder(
+    column: $table.amountMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get loggedAtMs => $composableBuilder(
+    column: $table.loggedAtMs,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$HydrationEntriesTableOrderingComposer
+    extends Composer<_$SystumDatabase, $HydrationEntriesTable> {
+  $$HydrationEntriesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get amountMs => $composableBuilder(
+    column: $table.amountMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get loggedAtMs => $composableBuilder(
+    column: $table.loggedAtMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$HydrationEntriesTableAnnotationComposer
+    extends Composer<_$SystumDatabase, $HydrationEntriesTable> {
+  $$HydrationEntriesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get amountMs =>
+      $composableBuilder(column: $table.amountMs, builder: (column) => column);
+
+  GeneratedColumn<int> get loggedAtMs => $composableBuilder(
+    column: $table.loggedAtMs,
+    builder: (column) => column,
+  );
+}
+
+class $$HydrationEntriesTableTableManager
+    extends
+        RootTableManager<
+          _$SystumDatabase,
+          $HydrationEntriesTable,
+          HydrationEntryRow,
+          $$HydrationEntriesTableFilterComposer,
+          $$HydrationEntriesTableOrderingComposer,
+          $$HydrationEntriesTableAnnotationComposer,
+          $$HydrationEntriesTableCreateCompanionBuilder,
+          $$HydrationEntriesTableUpdateCompanionBuilder,
+          (
+            HydrationEntryRow,
+            BaseReferences<
+              _$SystumDatabase,
+              $HydrationEntriesTable,
+              HydrationEntryRow
+            >,
+          ),
+          HydrationEntryRow,
+          PrefetchHooks Function()
+        > {
+  $$HydrationEntriesTableTableManager(
+    _$SystumDatabase db,
+    $HydrationEntriesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$HydrationEntriesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$HydrationEntriesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$HydrationEntriesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<int> amountMs = const Value.absent(),
+                Value<int> loggedAtMs = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => HydrationEntriesCompanion(
+                id: id,
+                amountMs: amountMs,
+                loggedAtMs: loggedAtMs,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required int amountMs,
+                required int loggedAtMs,
+                Value<int> rowid = const Value.absent(),
+              }) => HydrationEntriesCompanion.insert(
+                id: id,
+                amountMs: amountMs,
+                loggedAtMs: loggedAtMs,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$HydrationEntriesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$SystumDatabase,
+      $HydrationEntriesTable,
+      HydrationEntryRow,
+      $$HydrationEntriesTableFilterComposer,
+      $$HydrationEntriesTableOrderingComposer,
+      $$HydrationEntriesTableAnnotationComposer,
+      $$HydrationEntriesTableCreateCompanionBuilder,
+      $$HydrationEntriesTableUpdateCompanionBuilder,
+      (
+        HydrationEntryRow,
+        BaseReferences<
+          _$SystumDatabase,
+          $HydrationEntriesTable,
+          HydrationEntryRow
+        >,
+      ),
+      HydrationEntryRow,
+      PrefetchHooks Function()
+    >;
+typedef $$HydrationSettingsTableTableCreateCompanionBuilder =
+    HydrationSettingsTableCompanion Function({
+      required String id,
+      Value<bool> hydrationEnabled,
+      Value<int> dailyTargetMl,
+      Value<int> rowid,
+    });
+typedef $$HydrationSettingsTableTableUpdateCompanionBuilder =
+    HydrationSettingsTableCompanion Function({
+      Value<String> id,
+      Value<bool> hydrationEnabled,
+      Value<int> dailyTargetMl,
+      Value<int> rowid,
+    });
+
+class $$HydrationSettingsTableTableFilterComposer
+    extends Composer<_$SystumDatabase, $HydrationSettingsTableTable> {
+  $$HydrationSettingsTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get hydrationEnabled => $composableBuilder(
+    column: $table.hydrationEnabled,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get dailyTargetMl => $composableBuilder(
+    column: $table.dailyTargetMl,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$HydrationSettingsTableTableOrderingComposer
+    extends Composer<_$SystumDatabase, $HydrationSettingsTableTable> {
+  $$HydrationSettingsTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get hydrationEnabled => $composableBuilder(
+    column: $table.hydrationEnabled,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get dailyTargetMl => $composableBuilder(
+    column: $table.dailyTargetMl,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$HydrationSettingsTableTableAnnotationComposer
+    extends Composer<_$SystumDatabase, $HydrationSettingsTableTable> {
+  $$HydrationSettingsTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<bool> get hydrationEnabled => $composableBuilder(
+    column: $table.hydrationEnabled,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get dailyTargetMl => $composableBuilder(
+    column: $table.dailyTargetMl,
+    builder: (column) => column,
+  );
+}
+
+class $$HydrationSettingsTableTableTableManager
+    extends
+        RootTableManager<
+          _$SystumDatabase,
+          $HydrationSettingsTableTable,
+          HydrationSettingsRow,
+          $$HydrationSettingsTableTableFilterComposer,
+          $$HydrationSettingsTableTableOrderingComposer,
+          $$HydrationSettingsTableTableAnnotationComposer,
+          $$HydrationSettingsTableTableCreateCompanionBuilder,
+          $$HydrationSettingsTableTableUpdateCompanionBuilder,
+          (
+            HydrationSettingsRow,
+            BaseReferences<
+              _$SystumDatabase,
+              $HydrationSettingsTableTable,
+              HydrationSettingsRow
+            >,
+          ),
+          HydrationSettingsRow,
+          PrefetchHooks Function()
+        > {
+  $$HydrationSettingsTableTableTableManager(
+    _$SystumDatabase db,
+    $HydrationSettingsTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$HydrationSettingsTableTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$HydrationSettingsTableTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$HydrationSettingsTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<bool> hydrationEnabled = const Value.absent(),
+                Value<int> dailyTargetMl = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => HydrationSettingsTableCompanion(
+                id: id,
+                hydrationEnabled: hydrationEnabled,
+                dailyTargetMl: dailyTargetMl,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                Value<bool> hydrationEnabled = const Value.absent(),
+                Value<int> dailyTargetMl = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => HydrationSettingsTableCompanion.insert(
+                id: id,
+                hydrationEnabled: hydrationEnabled,
+                dailyTargetMl: dailyTargetMl,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$HydrationSettingsTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$SystumDatabase,
+      $HydrationSettingsTableTable,
+      HydrationSettingsRow,
+      $$HydrationSettingsTableTableFilterComposer,
+      $$HydrationSettingsTableTableOrderingComposer,
+      $$HydrationSettingsTableTableAnnotationComposer,
+      $$HydrationSettingsTableTableCreateCompanionBuilder,
+      $$HydrationSettingsTableTableUpdateCompanionBuilder,
+      (
+        HydrationSettingsRow,
+        BaseReferences<
+          _$SystumDatabase,
+          $HydrationSettingsTableTable,
+          HydrationSettingsRow
+        >,
+      ),
+      HydrationSettingsRow,
+      PrefetchHooks Function()
+    >;
 
 class $SystumDatabaseManager {
   final _$SystumDatabase _db;
@@ -8406,4 +9322,11 @@ class $SystumDatabaseManager {
       $$TaskOccurrencesTableTableManager(_db, _db.taskOccurrences);
   $$RemindersTableTableManager get reminders =>
       $$RemindersTableTableManager(_db, _db.reminders);
+  $$HydrationEntriesTableTableManager get hydrationEntries =>
+      $$HydrationEntriesTableTableManager(_db, _db.hydrationEntries);
+  $$HydrationSettingsTableTableTableManager get hydrationSettingsTable =>
+      $$HydrationSettingsTableTableTableManager(
+        _db,
+        _db.hydrationSettingsTable,
+      );
 }

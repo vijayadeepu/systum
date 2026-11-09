@@ -44,6 +44,38 @@ void main() {
     expect(find.text('Title'), findsOneWidget);
   });
 
+  testWidgets('navigation drawer opens and lists destinations', (tester) async {
+    tester.view.physicalSize = const Size(560, 480);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await pumpTaskList(tester);
+    await tester.tap(find.byIcon(Icons.menu_rounded));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Goals'), findsOneWidget);
+    expect(find.text('Agenda'), findsOneWidget);
+    expect(find.text('Calendar'), findsOneWidget);
+    expect(find.text('Focus'), findsOneWidget);
+    expect(find.text('Hydration').last, findsOneWidget);
+    expect(find.text('Reminders'), findsOneWidget);
+    expect(find.text('Focus History'), findsOneWidget);
+    expect(find.text('Backup & Restore'), findsOneWidget);
+    expect(find.text('Settings'), findsOneWidget);
+  });
+
+  testWidgets('filter row shows All Today Upcoming Overdue labels', (
+    tester,
+  ) async {
+    await pumpTaskList(tester);
+
+    expect(find.text('All'), findsOneWidget);
+    expect(find.text('Today'), findsOneWidget);
+    expect(find.text('Upcoming'), findsOneWidget);
+    expect(find.text('Overdue'), findsOneWidget);
+  });
+
   testWidgets('blank title is rejected and does not save a task', (
     tester,
   ) async {

@@ -317,40 +317,53 @@ class _AgendaEntry extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return ListTile(
-      leading: Checkbox(
-        value: entry.completed,
-        onChanged: (value) => onToggle(value ?? false),
-      ),
-      title: Text(
-        entry.title,
-        style: entry.completed
-            ? AppTypography.body.copyWith(
-                decoration: TextDecoration.lineThrough,
-                color: Colors.grey,
-              )
-            : AppTypography.body,
-      ),
-      subtitle: _buildSubtitle(),
-      trailing: Wrap(
-        spacing: AppSpacing.xs,
-        children: [
-          if (entry.hasReminder)
-            const Icon(Icons.notifications_active_rounded, size: 20),
-          if (onEdit != null)
-            IconButton(
-              tooltip: 'Edit task',
-              onPressed: onEdit,
-              icon: const Icon(Icons.edit_outlined, size: 20),
+    return Semantics(
+      label:
+          '${entry.title}${entry.completed ? ', completed' : ', not completed'}${entry.isOccurrence ? ', recurrence occurrence' : ''}',
+      button: onEdit != null,
+      child: ListTile(
+        leading: Checkbox(
+          value: entry.completed,
+          onChanged: (value) => onToggle(value ?? false),
+        ),
+        title: Text(
+          entry.title,
+          style: entry.completed
+              ? AppTypography.body.copyWith(
+                  decoration: TextDecoration.lineThrough,
+                  color: Colors.grey,
+                )
+              : AppTypography.body,
+        ),
+        subtitle: _buildSubtitle(),
+        trailing: Wrap(
+          spacing: AppSpacing.xs,
+          children: [
+            if (entry.hasReminder)
+              const Icon(Icons.notifications_active_rounded, size: 20),
+            if (onEdit != null)
+              Semantics(
+                label: 'Edit ${entry.title}',
+                button: true,
+                child: IconButton(
+                  tooltip: 'Edit task',
+                  onPressed: onEdit,
+                  icon: const Icon(Icons.edit_outlined, size: 20),
+                ),
+              ),
+            Semantics(
+              label: 'Start focus for ${entry.title}',
+              button: true,
+              child: IconButton(
+                tooltip: 'Start focus',
+                onPressed: onStartFocus,
+                icon: const Icon(Icons.center_focus_strong_outlined, size: 20),
+              ),
             ),
-          IconButton(
-            tooltip: 'Start focus',
-            onPressed: onStartFocus,
-            icon: const Icon(Icons.center_focus_strong_outlined, size: 20),
-          ),
-        ],
+          ],
+        ),
+        onTap: onEdit,
       ),
-      onTap: onEdit,
     );
   }
 
@@ -586,39 +599,44 @@ class _CalendarGrid extends ConsumerWidget {
               final isSelected = _sameCalendarDate(cellDate, selected);
               final hasTasks = calendar.hasTasksOn(cellDate);
 
-              return Material(
-                color: isSelected
-                    ? Theme.of(context).colorScheme.primaryContainer
-                    : Colors.transparent,
-                borderRadius: const BorderRadius.all(Radius.circular(12)),
-                child: InkWell(
+              return Semantics(
+                label:
+                    '$day${calendar.hasTasksOn(cellDate) ? ', has tasks' : ''}${isToday ? ', today' : ''}${isSelected ? ', selected' : ''}',
+                button: true,
+                child: Material(
+                  color: isSelected
+                      ? Theme.of(context).colorScheme.primaryContainer
+                      : Colors.transparent,
                   borderRadius: const BorderRadius.all(Radius.circular(12)),
-                  onTap: () => onSelect(cellDate),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        day.toString(),
-                        style: AppTypography.body.copyWith(
-                          color: isToday
-                              ? Theme.of(context).colorScheme.primary
-                              : null,
-                          fontWeight: isToday || isSelected
-                              ? FontWeight.w600
-                              : null,
-                        ),
-                      ),
-                      if (hasTasks)
-                        Container(
-                          margin: const EdgeInsets.only(top: 6),
-                          width: 7,
-                          height: 7,
-                          decoration: const BoxDecoration(
-                            color: Color(0xFFB3261E),
-                            shape: BoxShape.circle,
+                  child: InkWell(
+                    borderRadius: const BorderRadius.all(Radius.circular(12)),
+                    onTap: () => onSelect(cellDate),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          day.toString(),
+                          style: AppTypography.body.copyWith(
+                            color: isToday
+                                ? Theme.of(context).colorScheme.primary
+                                : null,
+                            fontWeight: isToday || isSelected
+                                ? FontWeight.w600
+                                : null,
                           ),
                         ),
-                    ],
+                        if (hasTasks)
+                          Container(
+                            margin: const EdgeInsets.only(top: 6),
+                            width: 7,
+                            height: 7,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFFB3261E),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
                 ),
               );

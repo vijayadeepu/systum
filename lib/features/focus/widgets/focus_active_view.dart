@@ -210,46 +210,53 @@ class _FocusActiveViewState extends ConsumerState<FocusActiveView> {
 
   Widget _controls(FocusSession session) {
     final notifier = ref.read(focusSessionProvider.notifier);
+    final isRunning = session.status == FocusSessionStatus.running;
     return Wrap(
       alignment: WrapAlignment.center,
       spacing: AppSpacing.sm,
       runSpacing: AppSpacing.sm,
       children: [
-        FilledButton.icon(
-          key: ValueKey(
-            session.status == FocusSessionStatus.running
-                ? 'pause-focus-session'
-                : 'resume-focus-session',
-          ),
-          onPressed: _isWorking
-              ? null
-              : () => _run(
-                  session.status == FocusSessionStatus.running
-                      ? () => notifier.pauseSession(session.id)
-                      : () => notifier.resumeSession(session.id),
-                ),
-          icon: Icon(
-            session.status == FocusSessionStatus.running
-                ? Icons.pause_rounded
-                : Icons.play_arrow_rounded,
-          ),
-          label: Text(
-            session.status == FocusSessionStatus.running ? 'Pause' : 'Resume',
+        Semantics(
+          label: isRunning ? 'Pause focus session' : 'Resume focus session',
+          button: true,
+          child: FilledButton.icon(
+            key: ValueKey(
+              isRunning ? 'pause-focus-session' : 'resume-focus-session',
+            ),
+            onPressed: _isWorking
+                ? null
+                : () => _run(
+                    isRunning
+                        ? () => notifier.pauseSession(session.id)
+                        : () => notifier.resumeSession(session.id),
+                  ),
+            icon: Icon(
+              isRunning ? Icons.pause_rounded : Icons.play_arrow_rounded,
+            ),
+            label: Text(isRunning ? 'Pause' : 'Resume'),
           ),
         ),
-        FilledButton.tonalIcon(
-          key: const ValueKey('complete-focus-session'),
-          onPressed: _isWorking
-              ? null
-              : () => _run(() => notifier.completeSession(session.id)),
-          icon: const Icon(Icons.check_rounded),
-          label: const Text('Complete'),
+        Semantics(
+          label: 'Complete focus session',
+          button: true,
+          child: FilledButton.tonalIcon(
+            key: const ValueKey('complete-focus-session'),
+            onPressed: _isWorking
+                ? null
+                : () => _run(() => notifier.completeSession(session.id)),
+            icon: const Icon(Icons.check_rounded),
+            label: const Text('Complete'),
+          ),
         ),
-        OutlinedButton.icon(
-          key: const ValueKey('cancel-focus-session'),
-          onPressed: _isWorking ? null : () => _confirmCancel(session.id),
-          icon: const Icon(Icons.close_rounded),
-          label: const Text('Cancel'),
+        Semantics(
+          label: 'Cancel focus session',
+          button: true,
+          child: OutlinedButton.icon(
+            key: const ValueKey('cancel-focus-session'),
+            onPressed: _isWorking ? null : () => _confirmCancel(session.id),
+            icon: const Icon(Icons.close_rounded),
+            label: const Text('Cancel'),
+          ),
         ),
       ],
     );

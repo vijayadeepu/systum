@@ -66,6 +66,19 @@ Notable changes to Systum are recorded here.
   shortcut, task-date indicators, and agenda navigation; factual daily summary
   (completed/incomplete/overdue tasks, focus sessions, focused time, tasks
   worked on) derived entirely from persisted data.
+- Accessibility (I1–I4): `Semantics` labels on task cards, goal cards, goal
+  task tiles, calendar day cells, and Focus controls (pause/resume/complete/
+  cancel); dynamic state labels for completion, overdue, active, today, and
+  selected states; keyboard dismissal on all dialog submissions (task create/
+  edit, goal create/edit, focus start).
+- Performance audit (J1–J4): database indexes verified, bounded occurrence
+  generation (90-day horizon, 1000 rows/run), bounded Riverpod providers,
+  non-blocking startup reconciliations, no polling, no unnecessary retained
+  state. No optimization was justified.
+- Architecture audit (K): UI→Provider→Repository→SQLite boundary verified,
+  migrations/foreign keys/indexes/transactions intact, UTC timestamp and
+  date-only UTC midnight conventions consistent, no swallowed exceptions, all
+  dependencies actively used, no dead code found.
 
 ### Fixed
 

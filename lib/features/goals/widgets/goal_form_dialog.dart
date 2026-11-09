@@ -66,6 +66,8 @@ class _GoalFormDialogState extends State<GoalFormDialog> {
       return;
     }
 
+    FocusScope.of(context).unfocus();
+
     final now = DateTime.now();
     final title = _titleController.text.trim();
     final description = _descriptionController.text.trim().isEmpty

@@ -40,7 +40,7 @@ void main() {
         'Pomodoro settings',
       ]),
     );
-    expect(issue(report, 'Schema structure').message, contains('Schema v8'));
+    expect(issue(report, 'Schema structure').message, contains('Schema v10'));
     expect(await database.select(database.tasks).get(), isEmpty);
     expect(await database.select(database.goals).get(), isEmpty);
     expect(await database.select(database.focusSessions).get(), isEmpty);
@@ -61,7 +61,7 @@ void main() {
       expect(schema.records, contains('missing_index:tasks_goal_id_idx'));
       expect(schema.records, contains('missing_column:tasks.category'));
       expect(schema.records, contains('missing_table:focus_session_intervals'));
-      expect(schema.records, contains('schema_version:expected 8 got 3'));
+      expect(schema.records, contains('schema_version:expected 10 got 3'));
       expect(schema.guidance, isNotNull);
     },
   );

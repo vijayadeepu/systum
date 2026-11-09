@@ -35,100 +35,108 @@ class GoalTaskTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dueDate = task.dueDate;
+    final semanticsLabel =
+        '${task.title}${task.completed ? ', completed' : ', not completed'}${dueDate != null ? ', due $dueDate' : ''}';
 
-    return Card(
-      margin: EdgeInsets.only(
-        left: isSubtask ? AppSpacing.xl : AppSpacing.md,
-        right: AppSpacing.md,
-        top: AppSpacing.xxs,
-        bottom: AppSpacing.xxs,
-      ),
-      shape: const RoundedRectangleBorder(borderRadius: AppRadius.medium),
-      clipBehavior: Clip.antiAlias,
-      child: Row(
-        children: [
-          Checkbox(
-            value: task.completed,
-            onChanged: onToggle,
-            semanticLabel: task.completed
-                ? 'Reopen ${task.title}'
-                : 'Complete ${task.title}',
-          ),
-          Expanded(
-            child: InkWell(
-              onTap: onOpen,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  vertical: AppSpacing.xs,
-                  horizontal: AppSpacing.xxs,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      task.title,
-                      style: AppTypography.body.copyWith(
-                        decoration: task.completed
-                            ? TextDecoration.lineThrough
-                            : null,
-                        color: task.completed ? AppColors.textSecondary : null,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    if (dueDate != null)
+    return Semantics(
+      label: semanticsLabel,
+      button: true,
+      child: Card(
+        margin: EdgeInsets.only(
+          left: isSubtask ? AppSpacing.xl : AppSpacing.md,
+          right: AppSpacing.md,
+          top: AppSpacing.xxs,
+          bottom: AppSpacing.xxs,
+        ),
+        shape: const RoundedRectangleBorder(borderRadius: AppRadius.medium),
+        clipBehavior: Clip.antiAlias,
+        child: Row(
+          children: [
+            Checkbox(
+              value: task.completed,
+              onChanged: onToggle,
+              semanticLabel: task.completed
+                  ? 'Reopen ${task.title}'
+                  : 'Complete ${task.title}',
+            ),
+            Expanded(
+              child: InkWell(
+                onTap: onOpen,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: AppSpacing.xs,
+                    horizontal: AppSpacing.xxs,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Text(
-                        'Due ${formatDate(dueDate)}',
-                        style: AppTypography.caption,
+                        task.title,
+                        style: AppTypography.body.copyWith(
+                          decoration: task.completed
+                              ? TextDecoration.lineThrough
+                              : null,
+                          color: task.completed
+                              ? AppColors.textSecondary
+                              : null,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    if (subtaskCount > 0)
-                      Text(
-                        subtaskCount == 1
-                            ? '1 subtask'
-                            : '$subtaskCount subtasks',
-                        style: AppTypography.caption,
-                      ),
-                  ],
+                      if (dueDate != null)
+                        Text(
+                          'Due ${formatDate(dueDate)}',
+                          style: AppTypography.caption,
+                        ),
+                      if (subtaskCount > 0)
+                        Text(
+                          subtaskCount == 1
+                              ? '1 subtask'
+                              : '$subtaskCount subtasks',
+                          style: AppTypography.caption,
+                        ),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-          PopupMenuButton<_GoalTaskAction>(
-            tooltip: 'Actions for ${task.title}',
-            onSelected: (action) {
-              switch (action) {
-                case _GoalTaskAction.open:
-                  onOpen();
-                case _GoalTaskAction.addSubtask:
-                  onAddSubtask?.call();
-                case _GoalTaskAction.removeFromGoal:
-                  onRemoveFromGoal?.call();
-                case _GoalTaskAction.delete:
-                  onDelete();
-              }
-            },
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: _GoalTaskAction.open,
-                child: Text('Open task'),
-              ),
-              if (onAddSubtask != null)
+            PopupMenuButton<_GoalTaskAction>(
+              tooltip: 'Actions for ${task.title}',
+              onSelected: (action) {
+                switch (action) {
+                  case _GoalTaskAction.open:
+                    onOpen();
+                  case _GoalTaskAction.addSubtask:
+                    onAddSubtask?.call();
+                  case _GoalTaskAction.removeFromGoal:
+                    onRemoveFromGoal?.call();
+                  case _GoalTaskAction.delete:
+                    onDelete();
+                }
+              },
+              itemBuilder: (context) => [
                 const PopupMenuItem(
-                  value: _GoalTaskAction.addSubtask,
-                  child: Text('Add subtask'),
+                  value: _GoalTaskAction.open,
+                  child: Text('Open task'),
                 ),
-              if (onRemoveFromGoal != null)
+                if (onAddSubtask != null)
+                  const PopupMenuItem(
+                    value: _GoalTaskAction.addSubtask,
+                    child: Text('Add subtask'),
+                  ),
+                if (onRemoveFromGoal != null)
+                  const PopupMenuItem(
+                    value: _GoalTaskAction.removeFromGoal,
+                    child: Text('Remove from goal'),
+                  ),
                 const PopupMenuItem(
-                  value: _GoalTaskAction.removeFromGoal,
-                  child: Text('Remove from goal'),
+                  value: _GoalTaskAction.delete,
+                  child: Text('Delete task'),
                 ),
-              const PopupMenuItem(
-                value: _GoalTaskAction.delete,
-                child: Text('Delete task'),
-              ),
-            ],
-          ),
-        ],
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

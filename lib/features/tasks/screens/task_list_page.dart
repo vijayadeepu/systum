@@ -4,9 +4,10 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/database/database.dart';
 import '../../../core/theme/app_spacing.dart';
-import '../../focus/providers/focus_provider.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../goals/providers/goal_provider.dart';
 import '../../goals/widgets/assignment_dialogs.dart';
+import '../../hydration/widgets/hydration_summary.dart';
 import '../models/task.dart';
 import '../models/task_filter.dart';
 import '../models/task_recurrence.dart';
@@ -30,12 +31,6 @@ class TaskListPage extends ConsumerWidget {
     final tasksState = ref.watch(taskProvider);
     final hierarchy = ref.watch(taskHierarchyProvider);
     final goalsState = ref.watch(goalProvider);
-    final focusState = ref.watch(focusSessionProvider);
-    final unresolvedSession = focusState.when(
-      data: (session) => session,
-      loading: () => null,
-      error: (_, _) => null,
-    );
     final goalTitles = {
       for (final goal in goalsState.value ?? const <GoalRow>[])
         goal.id: goal.title,
@@ -56,6 +51,13 @@ class TaskListPage extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: isSearchActive ? const _SearchField() : const Text('Tasks'),
+        leading: Builder(
+          builder: (context) => IconButton(
+            tooltip: 'Open navigation menu',
+            onPressed: () => Scaffold.of(context).openDrawer(),
+            icon: const Icon(Icons.menu_rounded),
+          ),
+        ),
         actions: [
           if (isSearchActive)
             IconButton(
@@ -75,108 +77,15 @@ class TaskListPage extends ConsumerWidget {
               icon: const Icon(Icons.search_rounded),
             ),
           TextButton.icon(
-            onPressed: () => context.push('/goals'),
-            icon: const Icon(Icons.flag_outlined),
-            label: const Text('Goals'),
-          ),
-          IconButton(
-            tooltip: 'Daily agenda',
-            onPressed: () => context.go(DailyAgendaPage.route),
-            icon: const Icon(Icons.event_rounded),
-          ),
-          IconButton(
-            tooltip: focusState.hasError
-                ? 'Focus unavailable'
-                : unresolvedSession == null
-                ? 'Focus'
-                : 'Resume focus',
-            onPressed: () => context.push('/focus'),
-            icon: Icon(
-              focusState.hasError
-                  ? Icons.error_outline_rounded
-                  : unresolvedSession == null
-                  ? Icons.center_focus_strong_outlined
-                  : Icons.play_arrow_rounded,
+            onPressed: () => _showSortBottomSheet(context, ref),
+            icon: const Icon(Icons.sort_rounded),
+            label: Text(
+              '${taskSortModeLabel(sort.mode)} ${taskSortOrderLabel(sort.order)}',
             ),
-          ),
-          PopupMenuButton<int>(
-            tooltip: 'More',
-            icon: const Icon(Icons.more_vert_rounded),
-            onSelected: (item) {
-              switch (item) {
-                case 0:
-                  if (showFilters) {
-                    ref.read(taskFilterProvider.notifier).clearAll();
-                    if (isSearchActive) {
-                      ref.read(taskSearchQueryProvider.notifier).setQuery('');
-                      ref.read(taskSearchProvider.notifier).search('');
-                    }
-                  } else {
-                    _showFilterBottomSheet(context, ref);
-                  }
-                  break;
-                case 1:
-                  _showSortBottomSheet(context, ref);
-                  break;
-                case 2:
-                  context.push('/focus/history');
-                  break;
-                case 3:
-                  context.push('/backup');
-                  break;
-              }
-            },
-            itemBuilder: (context) => [
-              PopupMenuItem(
-                value: 0,
-                child: Row(
-                  children: [
-                    if (showFilters)
-                      const Icon(Icons.filter_none_rounded, size: 18),
-                    if (!showFilters)
-                      const Icon(Icons.filter_rounded, size: 18),
-                    const SizedBox(width: 8),
-                    Text(showFilters ? 'Clear filters' : 'Filter tasks'),
-                  ],
-                ),
-              ),
-              PopupMenuItem(
-                value: 1,
-                child: Row(
-                  children: [
-                    const Icon(Icons.sort_rounded, size: 18),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Sort: ${taskSortModeLabel(sort.mode)} '
-                      '${taskSortOrderLabel(sort.order)}',
-                    ),
-                  ],
-                ),
-              ),
-              const PopupMenuItem(
-                value: 2,
-                child: Row(
-                  children: [
-                    Icon(Icons.history_rounded, size: 18),
-                    SizedBox(width: 8),
-                    Text('Focus history'),
-                  ],
-                ),
-              ),
-              const PopupMenuItem(
-                value: 3,
-                child: Row(
-                  children: [
-                    Icon(Icons.shield_outlined, size: 18),
-                    SizedBox(width: 8),
-                    Text('Backup and restore'),
-                  ],
-                ),
-              ),
-            ],
           ),
         ],
       ),
+      drawer: _buildDrawer(context, ref),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
           final result = await showDialog<CreateTaskResult>(
@@ -207,8 +116,9 @@ class TaskListPage extends ConsumerWidget {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // View selector chips. Horizontally scrollable so they take a fixed
-          // amount of vertical space even on narrow screens.
+          const HydrationSummary(),
+          // Task filter row: compact readable labels for the most common views.
+          // Horizontally scrollable so it stays safe on narrow screens.
           SizedBox(
             height: 44,
             child: ListView(
@@ -216,37 +126,58 @@ class TaskListPage extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
               clipBehavior: Clip.none,
               children: [
-                for (final viewValue in TaskView.values)
-                  Padding(
-                    padding: const EdgeInsets.only(right: AppSpacing.xs),
-                    child: _ViewChip(
-                      view: viewValue,
-                      active: view == viewValue,
-                      onTap: () => ref
-                          .read(taskViewProvider.notifier)
-                          .setView(viewValue),
-                    ),
-                  ),
-                if (showFilters || view != TaskView.all)
-                  Padding(
-                    padding: const EdgeInsets.only(right: AppSpacing.md),
-                    child: OutlinedButton.icon(
-                      onPressed: () {
-                        ref
-                            .read(taskViewProvider.notifier)
-                            .setView(TaskView.all);
-                        ref.read(taskFilterProvider.notifier).clearAll();
-                        if (isSearchActive) {
-                          ref
-                              .read(taskSearchQueryProvider.notifier)
-                              .setQuery('');
-                          ref.read(taskSearchProvider.notifier).search('');
-                        }
-                      },
-                      icon: const Icon(Icons.clear_all_rounded, size: 18),
-                      label: const Text('Reset'),
-                    ),
-                  ),
+                _FilterButton(
+                  label: 'All',
+                  selected: view == TaskView.all,
+                  onTap: () {
+                    ref.read(taskViewProvider.notifier).setView(TaskView.all);
+                    ref.read(taskFilterProvider.notifier).clearAll();
+                    if (isSearchActive) {
+                      ref.read(taskSearchQueryProvider.notifier).setQuery('');
+                      ref.read(taskSearchProvider.notifier).search('');
+                    }
+                  },
+                ),
+                _FilterButton(
+                  label: 'Today',
+                  selected: view == TaskView.today,
+                  onTap: () {
+                    ref.read(taskViewProvider.notifier).setView(TaskView.today);
+                    ref.read(taskFilterProvider.notifier).clearAll();
+                    if (isSearchActive) {
+                      ref.read(taskSearchQueryProvider.notifier).setQuery('');
+                      ref.read(taskSearchProvider.notifier).search('');
+                    }
+                  },
+                ),
+                _FilterButton(
+                  label: 'Upcoming',
+                  selected: view == TaskView.upcoming,
+                  onTap: () {
+                    ref
+                        .read(taskViewProvider.notifier)
+                        .setView(TaskView.upcoming);
+                    ref.read(taskFilterProvider.notifier).clearAll();
+                    if (isSearchActive) {
+                      ref.read(taskSearchQueryProvider.notifier).setQuery('');
+                      ref.read(taskSearchProvider.notifier).search('');
+                    }
+                  },
+                ),
+                _FilterButton(
+                  label: 'Overdue',
+                  selected: view == TaskView.overdue,
+                  onTap: () {
+                    ref
+                        .read(taskViewProvider.notifier)
+                        .setView(TaskView.overdue);
+                    ref.read(taskFilterProvider.notifier).clearAll();
+                    if (isSearchActive) {
+                      ref.read(taskSearchQueryProvider.notifier).setQuery('');
+                      ref.read(taskSearchProvider.notifier).search('');
+                    }
+                  },
+                ),
               ],
             ),
           ),
@@ -1152,190 +1083,6 @@ class TaskListPage extends ConsumerWidget {
     return null;
   }
 
-  /// Shows a bottom sheet for configuring task filters.
-  ///
-  /// Changes are applied immediately as the user interacts with the controls.
-  void _showFilterBottomSheet(BuildContext context, WidgetRef ref) {
-    final notifier = ref.read(taskFilterProvider.notifier);
-
-    showModalBottomSheet(
-      context: context,
-      builder: (bottomSheetContext) {
-        return Consumer(
-          builder: (context, ref, _) {
-            final filter = ref.watch(taskFilterProvider);
-            return Padding(
-              padding: EdgeInsets.only(
-                bottom: MediaQuery.of(context).viewInsets.bottom,
-                left: 16,
-                right: 16,
-                top: 20,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Filter tasks',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 16),
-                  const Text('Status', style: TextStyle(fontSize: 14)),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    children: [
-                      _FilterButton(
-                        label: 'All',
-                        selected: filter.status == TaskStatusFilter.all,
-                        onTap: () =>
-                            notifier.updateFilter(status: TaskStatusFilter.all),
-                      ),
-                      _FilterButton(
-                        label: 'Active',
-                        selected: filter.status == TaskStatusFilter.active,
-                        onTap: () => notifier.updateFilter(
-                          status: TaskStatusFilter.active,
-                        ),
-                      ),
-                      _FilterButton(
-                        label: 'Completed',
-                        selected: filter.status == TaskStatusFilter.completed,
-                        onTap: () => notifier.updateFilter(
-                          status: TaskStatusFilter.completed,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  const Text('Time', style: TextStyle(fontSize: 14)),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    children: [
-                      _FilterButton(
-                        label: 'All',
-                        selected: filter.time == TaskTimeFilter.all,
-                        onTap: () =>
-                            notifier.updateFilter(time: TaskTimeFilter.all),
-                      ),
-                      _FilterButton(
-                        label: 'Today',
-                        selected: filter.time == TaskTimeFilter.today,
-                        onTap: () =>
-                            notifier.updateFilter(time: TaskTimeFilter.today),
-                      ),
-                      _FilterButton(
-                        label: 'Upcoming',
-                        selected: filter.time == TaskTimeFilter.upcoming,
-                        onTap: () => notifier.updateFilter(
-                          time: TaskTimeFilter.upcoming,
-                        ),
-                      ),
-                      _FilterButton(
-                        label: 'Overdue',
-                        selected: filter.time == TaskTimeFilter.overdue,
-                        onTap: () =>
-                            notifier.updateFilter(time: TaskTimeFilter.overdue),
-                      ),
-                      _FilterButton(
-                        label: 'Custom range',
-                        selected: filter.time == TaskTimeFilter.custom,
-                        onTap: () =>
-                            notifier.updateFilter(time: TaskTimeFilter.custom),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  const Text('Priority', style: TextStyle(fontSize: 14)),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    children: List.generate(5, (index) {
-                      final priority = index + 1;
-                      return _FilterButton(
-                        label: 'P$priority',
-                        selected: filter.priority == priority,
-                        onTap: () => filter.priority == priority
-                            ? notifier.updateFilter(
-                                priority: null,
-                                clearPriority: true,
-                              )
-                            : notifier.updateFilter(priority: priority),
-                      );
-                    }),
-                  ),
-                  const SizedBox(height: 16),
-                  const Text('Category', style: TextStyle(fontSize: 14)),
-                  const SizedBox(height: 8),
-                  TextField(
-                    decoration: InputDecoration(
-                      hintText: 'Category',
-                      border: OutlineInputBorder(),
-                      isDense: true,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
-                    ),
-                    onChanged: (value) {
-                      final trimmed = value.trim();
-                      if (trimmed.isEmpty) {
-                        notifier.updateFilter(
-                          category: null,
-                          clearCategory: true,
-                        );
-                      } else {
-                        notifier.updateFilter(category: trimmed);
-                      }
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  const Text('Sort by', style: TextStyle(fontSize: 14)),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    children: TaskSortMode.values.map((mode) {
-                      return _FilterButton(
-                        label: taskSortModeLabel(mode),
-                        selected: ref.watch(taskSortProvider).mode == mode,
-                        onTap: () =>
-                            ref.read(taskSortProvider.notifier).setMode(mode),
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    children: TaskSortOrder.values.map((order) {
-                      return _FilterButton(
-                        label: taskSortOrderLabel(order),
-                        selected: ref.watch(taskSortProvider).order == order,
-                        onTap: () =>
-                            ref.read(taskSortProvider.notifier).setOrder(order),
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 24),
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton(
-                      onPressed: () {
-                        Navigator.of(bottomSheetContext).pop();
-                      },
-                      child: const Text('Done'),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
   /// Shows a bottom sheet for configuring task sort mode and order.
   void _showSortBottomSheet(BuildContext context, WidgetRef ref) {
     final notifier = ref.read(taskSortProvider.notifier);
@@ -1406,6 +1153,103 @@ class TaskListPage extends ConsumerWidget {
       },
     );
   }
+
+  /// Left navigation drawer with destinations moved from the old top bar and
+  /// three-dot menu. Search and Sort remain on the top bar and are not
+  /// duplicated here.
+  Widget _buildDrawer(BuildContext context, WidgetRef ref) {
+    return Drawer(
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            DrawerHeader(
+              decoration: BoxDecoration(color: AppColors.primary),
+              child: const Text(
+                'Systum',
+                style: TextStyle(color: Colors.white, fontSize: 20),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.task_rounded),
+              title: const Text('Tasks'),
+              selected: true,
+              onTap: () => Navigator.pop(context),
+            ),
+            ListTile(
+              leading: const Icon(Icons.flag_rounded),
+              title: const Text('Goals'),
+              onTap: () {
+                Navigator.pop(context);
+                context.push('/goals');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.event_rounded),
+              title: const Text('Agenda'),
+              onTap: () {
+                Navigator.pop(context);
+                context.go(DailyAgendaPage.route);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.calendar_today_rounded),
+              title: const Text('Calendar'),
+              onTap: () {
+                Navigator.pop(context);
+                context.push('/calendar');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.center_focus_strong_rounded),
+              title: const Text('Focus'),
+              onTap: () {
+                Navigator.pop(context);
+                context.push('/focus');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.local_drink_rounded),
+              title: const Text('Hydration'),
+              onTap: () {
+                Navigator.pop(context);
+                context.push('/settings');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.notifications_rounded),
+              title: const Text('Reminders'),
+              onTap: () => Navigator.pop(context),
+            ),
+            ListTile(
+              leading: const Icon(Icons.history_rounded),
+              title: const Text('Focus History'),
+              onTap: () {
+                Navigator.pop(context);
+                context.push('/focus/history');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.backup_rounded),
+              title: const Text('Backup & Restore'),
+              onTap: () {
+                Navigator.pop(context);
+                context.push('/backup');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.settings_rounded),
+              title: const Text('Settings'),
+              onTap: () {
+                Navigator.pop(context);
+                context.push('/settings');
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 /// A removable filter chip showing one active filter dimension.
@@ -1414,7 +1258,8 @@ class _FilterChip extends Chip {
     : super(
         label: Text(label),
         onDeleted: onDelete,
-        labelStyle: const TextStyle(fontSize: 12),
+        labelStyle: const TextStyle(fontSize: 12, color: AppColors.primary),
+        backgroundColor: AppColors.primary.withValues(alpha: 0.12),
       );
 }
 
@@ -1430,8 +1275,11 @@ class _FilterButton extends RawChip {
          showCheckmark: false,
          labelStyle: TextStyle(
            fontSize: 12,
-           color: selected ? Colors.black : null,
+           color: selected ? Colors.white : AppColors.primary,
          ),
+         backgroundColor: selected
+             ? AppColors.primary
+             : AppColors.primary.withValues(alpha: 0.12),
        );
 }
 
@@ -1497,29 +1345,4 @@ class _SearchFieldState extends ConsumerState<_SearchField> {
       onSubmitted: (_) => FocusScope.of(context).unfocus(),
     );
   }
-}
-
-/// A chip representing one task view. Tapping switches the active view.
-class _ViewChip extends FilterChip {
-  _ViewChip({
-    required TaskView view,
-    required bool active,
-    required VoidCallback onTap,
-  }) : super(
-         label: Row(
-           mainAxisSize: MainAxisSize.min,
-           children: [
-             Icon(taskViewIcon(view), size: 16),
-             const SizedBox(width: 6),
-             Text(taskViewLabel(view)),
-           ],
-         ),
-         selected: active,
-         onSelected: (_) => onTap(),
-         showCheckmark: false,
-         labelStyle: TextStyle(
-           fontSize: 12,
-           color: active ? Colors.black : null,
-         ),
-       );
 }

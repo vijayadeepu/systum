@@ -263,6 +263,7 @@ class _FocusSetupViewState extends ConsumerState<FocusSetupView> {
         !(_formKey.currentState?.validate() ?? false)) {
       return;
     }
+    FocusScope.of(context).unfocus();
     setState(() => _isStarting = true);
     try {
       await ref
@@ -283,6 +284,7 @@ class _FocusSetupViewState extends ConsumerState<FocusSetupView> {
   }
 
   Future<void> _startCycle() async {
+    FocusScope.of(context).unfocus();
     setState(() => _isStarting = true);
     try {
       await ref

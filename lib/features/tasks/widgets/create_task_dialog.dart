@@ -287,6 +287,8 @@ class _CreateTaskDialogState extends State<CreateTaskDialog> {
         return;
       }
 
+      FocusScope.of(context).unfocus();
+
       Navigator.of(
         context,
       ).pop(CreateTaskResult(task: task, recurrence: draft));

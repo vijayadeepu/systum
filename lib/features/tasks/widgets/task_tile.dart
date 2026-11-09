@@ -57,185 +57,191 @@ class TaskTile extends StatelessWidget {
     final dueDateText = _formatDueDate(task.dueDate);
     final priorityText = _priorityText(task.priority);
     final priorityColor = _priorityColor(task.priority);
+    final semanticsLabel =
+        '${task.title}${task.completed ? ', completed' : ', not completed'}${dueDateText != null ? ', $dueDateText' : ''}${countdown != null ? ', ${_countdownSubtitle(countdown)}' : ''}';
 
-    return Card(
-      margin: EdgeInsets.only(
-        left: isSubtask ? AppSpacing.xl : AppSpacing.md,
-        right: AppSpacing.md,
-        top: AppSpacing.xs,
-        bottom: AppSpacing.xs,
-      ),
-      shape: const RoundedRectangleBorder(borderRadius: AppRadius.medium),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.sm,
-          vertical: AppSpacing.xs,
+    return Semantics(
+      label: semanticsLabel,
+      button: true,
+      child: Card(
+        margin: EdgeInsets.only(
+          left: isSubtask ? AppSpacing.xl : AppSpacing.md,
+          right: AppSpacing.md,
+          top: AppSpacing.xs,
+          bottom: AppSpacing.xs,
         ),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            // Keep the title usable on narrow phones by dropping the optional
-            // priority badge before the action buttons are squeezed.
-            final showPriority = constraints.maxWidth >= 380;
+        shape: const RoundedRectangleBorder(borderRadius: AppRadius.medium),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.sm,
+            vertical: AppSpacing.xs,
+          ),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              // Keep the title usable on narrow phones by dropping the optional
+              // priority badge before the action buttons are squeezed.
+              final showPriority = constraints.maxWidth >= 380;
 
-            return Row(
-              children: [
-                Checkbox(value: task.completed, onChanged: onToggle),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        task.title,
-                        style: AppTypography.body,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      if (dueDateText != null)
-                        Text(dueDateText, style: AppTypography.caption),
-                      if (recurrenceSummary != null)
-                        Padding(
-                          padding: const EdgeInsets.only(top: AppSpacing.xxs),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(
-                                Icons.repeat_rounded,
-                                size: 14,
-                                color: AppColors.textSecondary,
-                              ),
-                              const SizedBox(width: AppSpacing.xxs),
-                              Flexible(
-                                child: Text(
-                                  recurrenceSummary!,
-                                  style: AppTypography.caption,
-                                  overflow: TextOverflow.ellipsis,
+              return Row(
+                children: [
+                  Checkbox(value: task.completed, onChanged: onToggle),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          task.title,
+                          style: AppTypography.body,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        if (dueDateText != null)
+                          Text(dueDateText, style: AppTypography.caption),
+                        if (recurrenceSummary != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: AppSpacing.xxs),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.repeat_rounded,
+                                  size: 14,
+                                  color: AppColors.textSecondary,
                                 ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      if (countdown != null) _buildCountdownText(countdown),
-                      if (subtaskCount > 0)
-                        Padding(
-                          padding: const EdgeInsets.only(top: AppSpacing.xxs),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(
-                                Icons.account_tree_outlined,
-                                size: 14,
-                                color: AppColors.textSecondary,
-                              ),
-                              const SizedBox(width: AppSpacing.xxs),
-                              Flexible(
-                                child: Text(
-                                  subtaskCount == 1
-                                      ? '1 subtask'
-                                      : '$subtaskCount subtasks',
-                                  style: AppTypography.caption,
-                                  overflow: TextOverflow.ellipsis,
+                                const SizedBox(width: AppSpacing.xxs),
+                                Flexible(
+                                  child: Text(
+                                    recurrenceSummary!,
+                                    style: AppTypography.caption,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
-                      if (goalTitle != null)
-                        _GoalLink(title: goalTitle!, onTap: onOpenGoal)
-                      else if (onAssignGoal != null)
-                        _GoalLink(
-                          title: 'Assign to goal',
-                          onTap: onAssignGoal,
-                          isAction: true,
-                        ),
-                    ],
+                        if (countdown != null) _buildCountdownText(countdown),
+                        if (subtaskCount > 0)
+                          Padding(
+                            padding: const EdgeInsets.only(top: AppSpacing.xxs),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.account_tree_outlined,
+                                  size: 14,
+                                  color: AppColors.textSecondary,
+                                ),
+                                const SizedBox(width: AppSpacing.xxs),
+                                Flexible(
+                                  child: Text(
+                                    subtaskCount == 1
+                                        ? '1 subtask'
+                                        : '$subtaskCount subtasks',
+                                    style: AppTypography.caption,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        if (goalTitle != null)
+                          _GoalLink(title: goalTitle!, onTap: onOpenGoal)
+                        else if (onAssignGoal != null)
+                          _GoalLink(
+                            title: 'Assign to goal',
+                            onTap: onAssignGoal,
+                            isAction: true,
+                          ),
+                      ],
+                    ),
                   ),
-                ),
-                if (showPriority) ...[
-                  const SizedBox(width: AppSpacing.sm),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.xs,
-                      vertical: AppSpacing.xxs,
-                    ),
-                    decoration: BoxDecoration(
-                      color: priorityColor.withValues(alpha: 0.12),
-                      borderRadius: AppRadius.small,
-                    ),
-                    child: Text(
-                      priorityText,
-                      style: AppTypography.caption.copyWith(
-                        color: priorityColor,
-                        fontWeight: FontWeight.w600,
+                  if (showPriority) ...[
+                    const SizedBox(width: AppSpacing.sm),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.xs,
+                        vertical: AppSpacing.xxs,
+                      ),
+                      decoration: BoxDecoration(
+                        color: priorityColor.withValues(alpha: 0.12),
+                        borderRadius: AppRadius.small,
+                      ),
+                      child: Text(
+                        priorityText,
+                        style: AppTypography.caption.copyWith(
+                          color: priorityColor,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
+                  ],
+                  if (onAssignGoal != null ||
+                      onRemoveFromGoal != null ||
+                      onStartFocus != null)
+                    PopupMenuButton<_TaskTileAction>(
+                      tooltip: onAssignGoal != null || onRemoveFromGoal != null
+                          ? 'Goal actions for ${task.title}'
+                          : 'Task actions for ${task.title}',
+                      onSelected: (action) {
+                        switch (action) {
+                          case _TaskTileAction.assign:
+                            onAssignGoal?.call();
+                          case _TaskTileAction.open:
+                            onOpenGoal?.call();
+                          case _TaskTileAction.remove:
+                            onRemoveFromGoal?.call();
+                          case _TaskTileAction.focus:
+                            onStartFocus?.call();
+                        }
+                      },
+                      itemBuilder: (context) => [
+                        if (onStartFocus != null)
+                          const PopupMenuItem(
+                            value: _TaskTileAction.focus,
+                            child: Text('Start focus'),
+                          ),
+                        if (onAssignGoal != null)
+                          PopupMenuItem(
+                            value: _TaskTileAction.assign,
+                            child: Text(
+                              goalTitle == null
+                                  ? 'Assign to goal'
+                                  : 'Change goal',
+                            ),
+                          ),
+                        if (goalTitle != null && onOpenGoal != null)
+                          const PopupMenuItem(
+                            value: _TaskTileAction.open,
+                            child: Text('Open goal'),
+                          ),
+                        if (onRemoveFromGoal != null)
+                          const PopupMenuItem(
+                            value: _TaskTileAction.remove,
+                            child: Text('Remove from goal'),
+                          ),
+                      ],
+                      icon: const Icon(Icons.flag_outlined),
+                    ),
+                  if (onAddSubtask != null)
+                    IconButton(
+                      tooltip: 'Add subtask to ${task.title}',
+                      onPressed: onAddSubtask,
+                      icon: const Icon(Icons.subdirectory_arrow_right_rounded),
+                    ),
+                  IconButton(
+                    tooltip: 'Edit ${task.title}',
+                    onPressed: onEdit,
+                    icon: const Icon(Icons.edit_outlined),
+                  ),
+                  IconButton(
+                    tooltip: 'Delete ${task.title}',
+                    onPressed: onDelete,
+                    icon: const Icon(Icons.delete_outline),
                   ),
                 ],
-                if (onAssignGoal != null ||
-                    onRemoveFromGoal != null ||
-                    onStartFocus != null)
-                  PopupMenuButton<_TaskTileAction>(
-                    tooltip: onAssignGoal != null || onRemoveFromGoal != null
-                        ? 'Goal actions for ${task.title}'
-                        : 'Task actions for ${task.title}',
-                    onSelected: (action) {
-                      switch (action) {
-                        case _TaskTileAction.assign:
-                          onAssignGoal?.call();
-                        case _TaskTileAction.open:
-                          onOpenGoal?.call();
-                        case _TaskTileAction.remove:
-                          onRemoveFromGoal?.call();
-                        case _TaskTileAction.focus:
-                          onStartFocus?.call();
-                      }
-                    },
-                    itemBuilder: (context) => [
-                      if (onStartFocus != null)
-                        const PopupMenuItem(
-                          value: _TaskTileAction.focus,
-                          child: Text('Start focus'),
-                        ),
-                      if (onAssignGoal != null)
-                        PopupMenuItem(
-                          value: _TaskTileAction.assign,
-                          child: Text(
-                            goalTitle == null
-                                ? 'Assign to goal'
-                                : 'Change goal',
-                          ),
-                        ),
-                      if (goalTitle != null && onOpenGoal != null)
-                        const PopupMenuItem(
-                          value: _TaskTileAction.open,
-                          child: Text('Open goal'),
-                        ),
-                      if (onRemoveFromGoal != null)
-                        const PopupMenuItem(
-                          value: _TaskTileAction.remove,
-                          child: Text('Remove from goal'),
-                        ),
-                    ],
-                    icon: const Icon(Icons.flag_outlined),
-                  ),
-                if (onAddSubtask != null)
-                  IconButton(
-                    tooltip: 'Add subtask to ${task.title}',
-                    onPressed: onAddSubtask,
-                    icon: const Icon(Icons.subdirectory_arrow_right_rounded),
-                  ),
-                IconButton(
-                  tooltip: 'Edit ${task.title}',
-                  onPressed: onEdit,
-                  icon: const Icon(Icons.edit_outlined),
-                ),
-                IconButton(
-                  tooltip: 'Delete ${task.title}',
-                  onPressed: onDelete,
-                  icon: const Icon(Icons.delete_outline),
-                ),
-              ],
-            );
-          },
+              );
+            },
+          ),
         ),
       ),
     );
@@ -251,28 +257,48 @@ class TaskTile extends StatelessWidget {
 
   Widget _buildCountdownText(CountdownResult? countdown) {
     if (countdown == null) return const SizedBox.shrink();
+
+    final remaining = countdown.remaining ?? Duration.zero;
+    final hms = formatCountdownHMS(remaining.abs());
+
     if (countdown.isDueNow) {
       return Text(
-        'Due now',
+        '⏱ 0000:00:00',
         style: AppTypography.caption.copyWith(
           color: AppColors.warning,
           fontWeight: FontWeight.w600,
+          fontFamily: 'monospace',
         ),
       );
     }
     if (countdown.isOverdue) {
       return Text(
-        'Overdue',
+        '🔴 OVERDUE $hms',
         style: AppTypography.caption.copyWith(
           color: AppColors.error,
           fontWeight: FontWeight.w600,
+          fontFamily: 'monospace',
         ),
       );
     }
     return Text(
-      formatCountdown(countdown.remaining!),
-      style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
+      '⏱ $hms',
+      style: AppTypography.caption.copyWith(
+        color: AppColors.textSecondary,
+        fontFamily: 'monospace',
+      ),
     );
+  }
+
+  /// Accessibility subtitle for the countdown, used in the tile's semantics
+  /// label so TalkBack users understand time remaining at a glance.
+  String _countdownSubtitle(CountdownResult? countdown) {
+    if (countdown == null) return '';
+    if (countdown.isDueNow) return ', countdown 0000:00:00';
+    if (countdown.isOverdue) {
+      return ', overdue ${formatCountdownHMS(countdown.remaining!.abs())}';
+    }
+    return ', countdown ${formatCountdownHMS(countdown.remaining!)}';
   }
 
   static String _priorityText(int priority) {

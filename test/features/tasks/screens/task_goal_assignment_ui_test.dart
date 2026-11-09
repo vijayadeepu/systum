@@ -305,6 +305,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    await tester.tap(find.byIcon(Icons.menu_rounded));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Goals'));
     await tester.pumpAndSettle();
 

@@ -121,7 +121,7 @@ void main() {
         expect(
           (await database.customSelect('PRAGMA user_version').getSingle())
               .read<int>('user_version'),
-          8,
+          10,
         );
         expect(
           await _tableNames(database),
@@ -377,7 +377,7 @@ void main() {
                   .customSelect('PRAGMA user_version')
                   .getSingle())
               .read<int>('user_version'),
-          8,
+          10,
         );
 
         final parent = await (migratedDatabase.select(
@@ -567,7 +567,7 @@ void main() {
     expect(
       (await database.customSelect('PRAGMA user_version').getSingle())
           .read<int>('user_version'),
-      8,
+      10,
     );
   });
 
@@ -625,7 +625,38 @@ void main() {
     expect(
       (await database.customSelect('PRAGMA user_version').getSingle())
           .read<int>('user_version'),
-      8,
+      10,
+    );
+  });
+
+  test('migrates version 8 to create the hydration_entries table', () async {
+    final database = SystumDatabase.test(
+      NativeDatabase.memory(
+        setup: (legacyDatabase) {
+          legacyDatabase.execute('''
+            CREATE TABLE tasks (
+              id TEXT NOT NULL PRIMARY KEY,
+              title TEXT NOT NULL,
+              completed INTEGER NOT NULL DEFAULT 0,
+              created_at INTEGER NOT NULL,
+              updated_at INTEGER NOT NULL
+            )
+          ''');
+          legacyDatabase.execute('PRAGMA user_version = 8');
+        },
+      ),
+    );
+    addTearDown(database.close);
+
+    expect(await _tableNames(database), contains('hydration_entries'));
+    expect(
+      await database.customSelect("PRAGMA table_info(hydration_entries)").get(),
+      isNotEmpty,
+    );
+    expect(
+      (await database.customSelect('PRAGMA user_version').getSingle())
+          .read<int>('user_version'),
+      10,
     );
   });
 }

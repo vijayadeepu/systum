@@ -8,6 +8,8 @@ import '../../features/focus/models/focus_session_mode.dart';
 import '../../features/focus/models/focus_session_status.dart';
 import '../../features/reminders/models/reminder_table.dart';
 import '../../features/tasks/models/task_table.dart';
+import '../../features/hydration/models/hydration_entry_table.dart';
+import '../../features/hydration/models/hydration_settings_table.dart';
 import 'database_connection.dart';
 
 part 'database.g.dart';
@@ -21,6 +23,8 @@ part 'database.g.dart';
     TaskRecurrenceRules,
     TaskOccurrences,
     Reminders,
+    HydrationEntries,
+    HydrationSettingsTable,
   ],
 )
 final class SystumDatabase extends _$SystumDatabase {
@@ -29,7 +33,7 @@ final class SystumDatabase extends _$SystumDatabase {
   SystumDatabase.test(super.executor);
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 10;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -80,6 +84,12 @@ final class SystumDatabase extends _$SystumDatabase {
       }
       if (from < 8) {
         await _createReminderIndexes();
+      }
+      if (from < 9) {
+        await migrator.createTable(hydrationEntries);
+      }
+      if (from < 10) {
+        await migrator.createTable(hydrationSettingsTable);
       }
     }),
     beforeOpen: (_) async {

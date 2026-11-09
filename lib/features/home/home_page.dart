@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../tasks/screens/task_list_page.dart';
+import '../../features/tasks/screens/task_list_page.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends ConsumerWidget {
   const HomePage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return const TaskListPage();
+  Widget build(BuildContext context, WidgetRef ref) {
+    return TaskListPage();
   }
 }

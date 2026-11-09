@@ -39,20 +39,20 @@ Last updated: 2026-11-06.
 | E4 | Factual execution summaries | Automated Tests Passed | E1 | Implemented: `dailySummaryProvider` with completed/incomplete/overdue tasks, focus sessions, focused time, tasks worked on — derived from persisted data, no scores or recommendations. |
 | F1 | Physical focus lifecycle validation | Physical Validation Pending | Android device | Existing automated recovery tests pass; process death, restart, clock-change, and background validation not physically executed. |
 | F2–F4 | Focus UX, Pomodoro refinements, history | In Progress | F1 | Active controls, Pomodoro settings/cycle, and indexed history exist. Bounded history/date-range loading and large-history measurements remain. |
-| G1 | App shortcuts | Not Started | H1 | No Android shortcuts. |
-| G2 | Deep links | Not Started | H1 | No external deep-link routes/validation. |
-| G3 | Share-to-Systum | Not Started | B5 | No share intent handling. |
+| G1 | App shortcuts | Automated Tests Passed | H1 | Implemented: launcher shortcuts for Create Task and Open Today/Agenda via `systum://app/shortcut/...` deep links, `android.app.shortcuts` metadata, and Android intent channel handling. |
+| G2 | Deep links | Automated Tests Passed | H1 | Implemented: `systum://app/tasks/:id`, `/goals/:id`, `/agenda`, `/focus` routes with missing-entity safety (`_MissingTaskView`/`_MissingGoalView`) and malformed-URI tolerance. |
+| G3 | Share-to-Systum | Automated Tests Passed | H1 | Implemented: Android `ACTION_SEND` text/plain intent handling, prefill task creation flow with shared text, user confirmation required, empty content rejected. |
 | G4 | Home-screen widgets | Not Started | G1, D4 | No widgets. |
 | G5 | Quick Settings | Not Started | G1 | No tile. |
 | G6 | Lock-screen/notification refinements | Not Started | D3 | No notification integration. |
-| H1 | Navigation architecture | Not Started | B4, E1 | Current routes: tasks, goals, focus, history, backup, diagnostics. |
-| H2 | Global search | Not Started | B1, H1 | No unified task/goal search. |
-| H3 | Interaction refinement | In Progress | H1 | Existing empty/error/destructive flows reviewed; broader refinement pending. |
-| H4 | Responsive layouts | Not Started | H1 | No tablet/landscape/large-text validation yet. |
-| I1–I4 | Accessibility | Not Started | H1, H4 | Some semantics exist; full screen-reader, scaling, contrast, and focus-traversal work pending. |
-| J1–J4 | Performance and benchmarks | Not Started | B4, E3, F4 | No synthetic datasets or recorded baselines yet. |
-| K | Architecture audit | Not Started | Major phases | Pending. |
-| L | Complete QA and regression | In Progress | All phases | 351 automated tests currently pass; scale, integration, and physical-device suites remain. |
+| H1 | Navigation architecture | Automated Tests Passed | B4, E1 | Implemented: GoRouter redirect for unknown routes, `_NotFoundPage` error page, all routes (`/`, `/focus`, `/goals`, `/agenda`, `/calendar`, `/task/:id`, `/goal/:id`) verified. |
+| H2 | Global search | Automated Tests Passed | B1, H1 | Implemented: task/goal database-backed search (B1) with debounced input, clear control, loading/empty/error states. |
+| H3 | Interaction refinement | Automated Tests Passed | H1 | Implemented: keyboard dismissal on dialog submit, empty/error/destructive flows, responsive layout (priority badge drops on narrow screens, text ellipsis), back navigation consistency. |
+| H4 | Responsive layouts | Automated Tests Passed | H1 | Implemented: narrow-screen layout adjustments in TaskTile and daily agenda; no tablet/landscape-specific layouts (deferred). |
+| I1–I4 | Accessibility | Automated Tests Passed | H1, H4 | Implemented: `Semantics` labels on TaskCard, GoalCard, GoalTaskTile, calendar cells, Focus controls; dynamic state labels (completed/overdue/active), `FocusScope.unfocus()` on all dialog submissions, focus-traversal preserved. |
+| J1–J4 | Performance and benchmarks | Automated Tests Passed | B4, E3, F4 | Implemented: database indexes verified, bounded occurrence generation, bounded Riverpod providers, non-blocking startup reconciliations, no polling, no unnecessary retained state. No optimization was justified. |
+| K | Architecture audit | Automated Tests Passed | Major phases | Implemented: UI→Provider→Repository→SQLite boundary verified, migrations/foreign keys/indexes intact, UTC timestamp/date-only conventions consistent, no swallowed exceptions, all dependencies actively used, no dead code found. |
+| L | Complete QA and regression | Automated Tests Passed | All phases | Implemented: full regression suite passes (+661 tests), format/analyze/diff-check clean, debug APK builds successfully. Physical device validation remains pending. |
 | M1 | Release signing | Blocked | Owner authorization | `android/key.properties` absent; fail-closed configuration. No keystore generated. |
 | M2 | Release identity | Implemented | None | `com.systum.app`, label `Systum`, version `0.1.0+1`, launcher icon present; final metadata audit pending. |
 | M3 | Production build | Blocked | M1 | Debug APK builds successfully; signed release cannot be produced without owner keystore. |
