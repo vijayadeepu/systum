@@ -11,6 +11,8 @@ import '../../features/focus/repository/focus_session_repository_support.dart';
 import '../../features/focus/repository/pomodoro_settings_store.dart';
 import '../../features/goals/models/goal_date.dart';
 import '../../features/reminders/models/reminder.dart';
+import '../../features/hydration/models/hydration_entry.dart';
+import '../../features/hydration/models/hydration_settings.dart';
 import '../../features/tasks/models/task_recurrence.dart';
 import '../../core/database/database.dart';
 import 'restore_journal.dart';
@@ -100,6 +102,12 @@ final class BackupService {
           .select(_database.taskOccurrences)
           .get();
       final reminders = await _database.select(_database.reminders).get();
+      final hydrationEntries = await _database
+          .select(_database.hydrationEntries)
+          .get();
+      final hydrationSettings = await _database
+          .select(_database.hydrationSettingsTable)
+          .get();
       return {
         'goals': goals.map(_goalToJson).toList(growable: false),
         'tasks': tasks.map(_taskToJson).toList(growable: false),
@@ -114,6 +122,24 @@ final class BackupService {
             .map(_occurrenceToJson)
             .toList(growable: false),
         'reminders': reminders.map(_reminderToJson).toList(growable: false),
+        'hydrationEntries': hydrationEntries
+            .map(
+              (entry) => {
+                'id': entry.id,
+                'amountMl': entry.amountMs,
+                'loggedAtMs': entry.loggedAtMs,
+              },
+            )
+            .toList(growable: false),
+        'hydrationSettings': hydrationSettings
+            .map(
+              (settings) => {
+                'id': settings.id,
+                'hydrationEnabled': settings.hydrationEnabled,
+                'dailyTargetMl': settings.dailyTargetMl,
+              },
+            )
+            .toList(growable: false),
       };
     });
     final preferences = await _settingsStore.exportData();
@@ -281,6 +307,8 @@ final class BackupService {
       await _database.delete(_database.taskRecurrenceRules).go();
       await _database.delete(_database.tasks).go();
       await _database.delete(_database.goals).go();
+      await _database.delete(_database.hydrationEntries).go();
+      await _database.delete(_database.hydrationSettingsTable).go();
 
       for (final goal in rows.goals) {
         await _database.into(_database.goals).insert(goal.toCompanion(true));
@@ -318,6 +346,16 @@ final class BackupService {
             .into(_database.reminders)
             .insert(reminder.toCompanion());
       }
+      for (final entry in rows.hydrationEntries) {
+        await _database
+            .into(_database.hydrationEntries)
+            .insert(entry.toCompanion());
+      }
+      for (final settings in rows.hydrationSettings) {
+        await _database
+            .into(_database.hydrationSettingsTable)
+            .insert(settings.toCompanion());
+      }
     });
   }
 
@@ -334,6 +372,12 @@ final class BackupService {
           .select(_database.taskOccurrences)
           .get();
       final reminders = await _database.select(_database.reminders).get();
+      final hydrationEntries = await _database
+          .select(_database.hydrationEntries)
+          .get();
+      final hydrationSettings = await _database
+          .select(_database.hydrationSettingsTable)
+          .get();
       return {
         'goals': goals.map(_goalToJson).toList(),
         'tasks': tasks.map(_taskToJson).toList(),
@@ -342,6 +386,24 @@ final class BackupService {
         'taskRecurrenceRules': rules.map(_recurrenceRuleToJson).toList(),
         'taskOccurrences': occurrences.map(_occurrenceToJson).toList(),
         'reminders': reminders.map(_reminderToJson).toList(),
+        'hydrationEntries': hydrationEntries
+            .map(
+              (entry) => {
+                'id': entry.id,
+                'amountMl': entry.amountMs,
+                'loggedAtMs': entry.loggedAtMs,
+              },
+            )
+            .toList(),
+        'hydrationSettings': hydrationSettings
+            .map(
+              (settings) => {
+                'id': settings.id,
+                'hydrationEnabled': settings.hydrationEnabled,
+                'dailyTargetMl': settings.dailyTargetMl,
+              },
+            )
+            .toList(),
       };
     });
     return _fingerprintData(data);
@@ -361,6 +423,24 @@ final class BackupService {
         .map(_occurrenceToJsonFromDomain)
         .toList(),
     'reminders': rows.reminders.map(_reminderToJsonFromDomain).toList(),
+    'hydrationEntries': rows.hydrationEntries
+        .map(
+          (entry) => {
+            'id': entry.id,
+            'amountMl': entry.amountMs,
+            'loggedAtMs': entry.loggedAtMs,
+          },
+        )
+        .toList(),
+    'hydrationSettings': rows.hydrationSettings
+        .map(
+          (settings) => {
+            'id': settings.id,
+            'hydrationEnabled': settings.hydrationEnabled,
+            'dailyTargetMl': settings.dailyTargetMl,
+          },
+        )
+        .toList(),
   });
 
   static String _fingerprintData(Map<String, dynamic> data) {
@@ -396,7 +476,7 @@ final class BackupService {
   static String _randomSuffix() =>
       DateTime.now().millisecondsSinceEpoch.toRadixString(36);
 
-  static const _schemaVersion = 8;
+  static const _schemaVersion = 10;
 
   /// Schema versions recorded by older backup releases that remain readable.
   ///
@@ -730,6 +810,49 @@ final class BackupService {
       data,
       'reminders',
     ).map(_reminderFromJson).toList();
+    final hydrationEntries = _optionalList(data, 'hydrationEntries').map((
+      value,
+    ) {
+      final row = value as Map<String, dynamic>;
+      final id = row['id'];
+      final amount = row['amountMl'];
+      final loggedAtMs = row['loggedAtMs'];
+      if (id is! String ||
+          id.isEmpty ||
+          amount is! int ||
+          amount <= 0 ||
+          loggedAtMs is! int) {
+        throw const BackupValidationException('A hydration entry is invalid.');
+      }
+      return HydrationEntry(id: id, amountMs: amount, loggedAtMs: loggedAtMs);
+    }).toList();
+    final hydrationSettings = _optionalList(data, 'hydrationSettings').map((
+      value,
+    ) {
+      final row = value as Map<String, dynamic>;
+      final id = row['id'];
+      final enabled = row['hydrationEnabled'];
+      final target = row['dailyTargetMl'];
+      if (id is! String ||
+          id.isEmpty ||
+          enabled is! bool ||
+          target is! int ||
+          target <= 0) {
+        throw const BackupValidationException(
+          'Hydration settings are invalid.',
+        );
+      }
+      return HydrationSettings(
+        id: id,
+        hydrationEnabled: enabled,
+        dailyTargetMl: target,
+      );
+    }).toList();
+    if (hydrationSettings.length > 1) {
+      throw const BackupValidationException(
+        'Hydration settings contain duplicate rows.',
+      );
+    }
     _requireUnique(goals.map((row) => row.id), 'goal');
     _requireUnique(tasks.map((row) => row.id), 'task');
     _requireUnique(sessions.map((row) => row.id), 'focus session');
@@ -737,6 +860,7 @@ final class BackupService {
     _requireUnique(rules.map((row) => row.id), 'recurrence rule');
     _requireUnique(occurrences.map((row) => row.id), 'occurrence');
     _requireUnique(reminders.map((row) => row.id), 'reminder');
+    _requireUnique(hydrationEntries.map((row) => row.id), 'hydration entry');
     final goalIds = goals.map((row) => row.id).toSet();
     final taskIds = tasks.map((row) => row.id).toSet();
     final sessionIds = sessions.map((row) => row.id).toSet();
@@ -830,6 +954,8 @@ final class BackupService {
       rules,
       occurrences,
       reminders,
+      hydrationEntries,
+      hydrationSettings,
       preferences,
     );
   }
@@ -1146,6 +1272,8 @@ final class _BackupRows {
     this.rules,
     this.occurrences,
     this.reminders,
+    this.hydrationEntries,
+    this.hydrationSettings,
     this.preferences,
   );
 
@@ -1156,6 +1284,8 @@ final class _BackupRows {
   final List<TaskRecurrenceRule> rules;
   final List<TaskOccurrence> occurrences;
   final List<Reminder> reminders;
+  final List<HydrationEntry> hydrationEntries;
+  final List<HydrationSettings> hydrationSettings;
   final Map<String, dynamic> preferences;
 }
 

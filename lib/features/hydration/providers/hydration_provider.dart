@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../shared/providers/database_provider.dart';
 import '../models/hydration_entry.dart';
 import '../repository/hydration_repository.dart';
+import 'hydration_settings_provider.dart';
 
 /// Provides a [HydrationRepository] backed by the app database.
 final hydrationRepositoryProvider = Provider<HydrationRepository>((ref) {
@@ -10,7 +11,14 @@ final hydrationRepositoryProvider = Provider<HydrationRepository>((ref) {
 });
 
 /// Current daily hydration target in milliliters. Defaults to 2500 ml (2.5 L).
-final hydrationTargetMsProvider = Provider<int>((_) => 2500);
+final hydrationTargetMsProvider = Provider<int>((ref) {
+  return ref
+      .watch(hydrationSettingsProvider)
+      .maybeWhen(
+        data: (settings) => settings.dailyTargetMl,
+        orElse: () => 2500,
+      );
+});
 
 /// Hydration entries for a specific date.
 final hydrationEntriesProvider =

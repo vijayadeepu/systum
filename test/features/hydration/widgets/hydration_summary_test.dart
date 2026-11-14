@@ -82,33 +82,6 @@ void main() {
     expect(find.text('250 ml'), findsOneWidget);
   });
 
-  testWidgets('quick-log entries can be undone from persisted storage', (
-    tester,
-  ) async {
-    final today = DateTime.now();
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [databaseProvider.overrideWithValue(database)],
-        child: MaterialApp(
-          home: Scaffold(body: HydrationSummary(date: today)),
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.text('250 ml'));
-    await tester.pumpAndSettle();
-
-    final entries = await database.select(database.hydrationEntries).get();
-    expect(entries.map((entry) => entry.amountMs), [250]);
-
-    await tester.tap(find.text('Undo'));
-    await tester.pumpAndSettle();
-
-    expect(await database.select(database.hydrationEntries).get(), isEmpty);
-    expect(find.textContaining('0.0 L / 2.5 L'), findsOneWidget);
-  });
-
   testWidgets('fits a narrow screen without hydration overflow', (
     tester,
   ) async {

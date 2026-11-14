@@ -629,7 +629,7 @@ void main() {
     );
   });
 
-  test('migrates version 8 to create the hydration_entries table', () async {
+  test('migrates version 8 to create hydration tables', () async {
     final database = SystumDatabase.test(
       NativeDatabase.memory(
         setup: (legacyDatabase) {
@@ -648,9 +648,18 @@ void main() {
     );
     addTearDown(database.close);
 
-    expect(await _tableNames(database), contains('hydration_entries'));
+    expect(
+      await _tableNames(database),
+      containsAll(['hydration_entries', 'hydration_settings_table']),
+    );
     expect(
       await database.customSelect("PRAGMA table_info(hydration_entries)").get(),
+      isNotEmpty,
+    );
+    expect(
+      await database
+          .customSelect("PRAGMA table_info(hydration_settings_table)")
+          .get(),
       isNotEmpty,
     );
     expect(

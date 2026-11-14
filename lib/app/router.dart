@@ -6,7 +6,9 @@ import '../features/goals/screens/goal_list_page.dart';
 import '../features/focus/screens/focus_page.dart';
 import '../features/focus/screens/focus_history_page.dart';
 import '../features/home/home_page.dart';
+import '../features/hydration/screens/hydration_details_page.dart';
 import '../features/hydration/screens/hydration_settings_page.dart';
+import '../features/settings/screens/settings_page.dart';
 import '../features/tasks/screens/daily_agenda_page.dart';
 import '../features/tasks/screens/task_detail_page.dart';
 import '../core/backup/backup_page.dart';
@@ -64,6 +66,8 @@ final appRouter = GoRouter(
       '/goals',
       '/agenda',
       '/calendar',
+      '/hydration',
+      '/settings',
     };
     if (known.contains(uri.path)) return null;
     if (uri.path.startsWith('/goal/') || uri.path.startsWith('/task/')) {
@@ -113,7 +117,15 @@ final appRouter = GoRouter(
       builder: (context, state) => const MonthCalendarPage(),
     ),
     GoRoute(
+      path: '/hydration',
+      builder: (context, state) => const HydrationDetailsPage(),
+    ),
+    GoRoute(
       path: '/settings',
+      builder: (context, state) => const SettingsPage(),
+    ),
+    GoRoute(
+      path: '/settings/hydration',
       builder: (context, state) => const HydrationSettingsPage(),
     ),
   ],

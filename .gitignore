@@ -90,3 +90,6 @@ lcov.info
 
 firebase-debug.log
 .github
+!.github/
+!.github/workflows/
+!.github/workflows/ci.yml

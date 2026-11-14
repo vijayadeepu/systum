@@ -64,14 +64,14 @@ class HydrationSettingsPage extends ConsumerWidget {
         SwitchListTile(
           title: const Text('Enable hydration tracking'),
           subtitle: const Text(
-            'Show hydration summary on the home page and track daily '
-            'water intake.',
+            'Track daily water intake on the Hydration details page.',
           ),
           value: settings.hydrationEnabled,
           onChanged: (value) async {
             await ref
                 .read(hydrationSettingsRepositoryProvider)
                 .updateSettings(settings.copyWith(hydrationEnabled: value));
+            ref.invalidate(hydrationSettingsProvider);
           },
         ),
         const Divider(height: AppSpacing.md),
@@ -117,6 +117,7 @@ class HydrationSettingsPage extends ConsumerWidget {
             await ref
                 .read(hydrationSettingsRepositoryProvider)
                 .updateSettings(settings.copyWith(dailyTargetMl: amount));
+            ref.invalidate(hydrationSettingsProvider);
           },
           selectedColor: AppColors.primary.withValues(alpha: 0.12),
           checkmarkColor: AppColors.primary,

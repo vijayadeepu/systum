@@ -59,6 +59,8 @@ Notable changes to Systum are recorded here.
   persisted SQLite reminders, reboot boot receiver plus startup re-derivation,
   idempotent cancel-and-replace with deterministic IDs, permission-denied
   skip and restored-permission re-schedule.
+- Hydration tracking is included in schema v10 diagnostics and full backup/
+  restore, with routable details and settings screens.
 - Daily planning & calendar (E1–E4): daily agenda projecting persisted tasks
   and recurring task occurrences (Today, previous/next day, date selection,
   overdue and due-on-date sections, completion, quick creation); transient

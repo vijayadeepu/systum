@@ -7,7 +7,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../goals/providers/goal_provider.dart';
 import '../../goals/widgets/assignment_dialogs.dart';
-import '../../hydration/widgets/hydration_summary.dart';
+
 import '../models/task.dart';
 import '../models/task_filter.dart';
 import '../models/task_recurrence.dart';
@@ -116,7 +116,6 @@ class TaskListPage extends ConsumerWidget {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const HydrationSummary(),
           // Task filter row: compact readable labels for the most common views.
           // Horizontally scrollable so it stays safe on narrow screens.
           SizedBox(
@@ -1213,7 +1212,7 @@ class TaskListPage extends ConsumerWidget {
               title: const Text('Hydration'),
               onTap: () {
                 Navigator.pop(context);
-                context.push('/settings');
+                context.push('/hydration');
               },
             ),
             ListTile(

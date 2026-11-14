@@ -107,7 +107,7 @@ class _BackupPageState extends ConsumerState<BackupPage> {
           ),
           const SizedBox(height: AppSpacing.sm),
           const Text(
-            'Backups include tasks, goals, focus history, intervals, and Pomodoro settings. Nothing is uploaded.',
+            'Backups include tasks, goals, focus history, hydration, intervals, and Pomodoro settings. Nothing is uploaded.',
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: AppSpacing.lg),
@@ -269,7 +269,7 @@ class _BackupPageState extends ConsumerState<BackupPage> {
         content: Text(
           'Backup from ${_backupTimestamp(entry.file.createdAt)}.\n\n'
           'Restoring replaces current tasks, goals, focus history, intervals, '
-          'and Pomodoro settings. This cannot be undone from inside Systum.',
+          'hydration, and Pomodoro settings. This cannot be undone from inside Systum.',
         ),
         actions: [
           TextButton(
@@ -444,7 +444,7 @@ class _BackupPageState extends ConsumerState<BackupPage> {
         builder: (context) => AlertDialog(
           title: const Text('Replace local data?'),
           content: Text(
-            '$verificationMessage\n\nRestoring will replace current tasks, goals, focus history, and Pomodoro settings. This cannot be undone from inside Systum.',
+            '$verificationMessage\n\nRestoring will replace current tasks, goals, focus history, hydration, and Pomodoro settings. This cannot be undone from inside Systum.',
           ),
           actions: [
             TextButton(

@@ -156,34 +156,12 @@ class _QuickLogButton extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return TextButton.icon(
       onPressed: () async {
-        final entryId = await ref
-            .read(hydrationRepositoryProvider)
-            .logEntry(amountMs);
+        await ref.read(hydrationRepositoryProvider).logEntry(amountMs);
         if (!context.mounted) return;
         // ignore: unused_result
         ref.refresh(hydrationTotalMsProvider(date));
         // ignore: unused_result
         ref.refresh(hydrationTargetMetProvider(date));
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Logged $amountMs ml'),
-            duration: const Duration(seconds: 4),
-            action: SnackBarAction(
-              label: 'Undo',
-              onPressed: () async {
-                await ref
-                    .read(hydrationRepositoryProvider)
-                    .deleteEntry(entryId);
-                if (!context.mounted) return;
-                // ignore: unused_result
-                ref.refresh(hydrationTotalMsProvider(date));
-                // ignore: unused_result
-                ref.refresh(hydrationTargetMetProvider(date));
-              },
-            ),
-          ),
-        );
       },
       style: TextButton.styleFrom(
         foregroundColor: Colors.white,

@@ -204,6 +204,24 @@ void main() {
   test('round trips goals, hierarchy, focus intervals, and settings', () async {
     final now = DateTime.utc(2026, 1, 1, 10);
     await database
+        .into(database.hydrationEntries)
+        .insert(
+          HydrationEntriesCompanion.insert(
+            id: 'water-1',
+            amountMs: 350,
+            loggedAtMs: now.millisecondsSinceEpoch,
+          ),
+        );
+    await database
+        .into(database.hydrationSettingsTable)
+        .insert(
+          HydrationSettingsTableCompanion.insert(
+            id: 'hydration-settings',
+            hydrationEnabled: const Value(true),
+            dailyTargetMl: const Value(3000),
+          ),
+        );
+    await database
         .into(database.goals)
         .insert(
           GoalsCompanion.insert(
@@ -292,6 +310,16 @@ void main() {
           .single
           .endedAtMs,
       250,
+    );
+    expect(
+      (await database.select(database.hydrationEntries).get()).single.amountMs,
+      350,
+    );
+    expect(
+      (await database.select(database.hydrationSettingsTable).get())
+          .single
+          .dailyTargetMl,
+      3000,
     );
     expect((await PomodoroSettingsStore().load()).focusMinutes, 50);
   });

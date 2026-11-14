@@ -105,14 +105,16 @@ This project emphasizes:
 
 * Focus history is currently loaded as one indexed local query; pagination has
   not been added because no measured query problem exists yet.
-* Search, filtering, and manual ordering are not implemented.
+* Search, filtering, sorting, and task views are implemented; manual ordering
+  remains limited to daily planning.
 * Automatic backups are lifecycle-triggered at startup or manually; Systum does
   not run a background backup service. Retention keeps five copies by default
   and always preserves the current and previous verified copy.
 * Automatic backup files are not encrypted. They remain in app-private storage
   and are removed when the application's private data is cleared.
 * The full local backup payload includes tasks, goals, recurrence rules and
-  occurrences, reminders, and Focus history, so recurring tasks and reminders
+  occurrences, reminders, hydration, and Focus history, so recurring tasks,
+  reminders, and hydration data
   survive a verified restore; legacy versions without recurrence or reminder
   payload lists remain accepted as legacy/unverified and restore with those
   datasets empty.
@@ -123,8 +125,8 @@ This project emphasizes:
 * Reminder persistence stores scheduling intent only. Android notification
   delivery is implemented for scheduled reminders; when runtime notification
   permission is denied, no notification is delivered and the persisted reminder
-  row remains intact. Android-side reboot, timezone, and permission-state
-  reconciliation are not implemented yet.
+  row remains intact. Android-side reconciliation is implemented; physical
+  device validation remains outstanding.
 * SQLite and SharedPreferences remain separate persistence systems. Restore
   uses a durable journal and startup reconciliation to guarantee that an
   interrupted restore is not reported as complete; it does not provide a
@@ -429,8 +431,8 @@ small interface, so the reminder domain never touches plugin types directly.
 * Runtime notification permission is requested through the scheduler; denial
   leaves the persisted reminder scheduled without an Android schedule.
 
-Android reboot, startup, timezone-change, permission-state, duplicate-job, and
-missing-notification repair remain deferred to D4.
+Physical validation of Android reboot, timezone-change, permission-state,
+duplicate-job, and missing-notification repair remains outstanding.
 
 ## Android Notification Reconciliation (D4)
 

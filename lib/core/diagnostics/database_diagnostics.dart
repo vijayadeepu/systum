@@ -118,6 +118,8 @@ final class DatabaseDiagnosticsService {
       'created_at_ms',
       'updated_at_ms',
     },
+    'hydration_entries': {'id', 'amount_ms', 'logged_at_ms'},
+    'hydration_settings_table': {'id', 'hydration_enabled', 'daily_target_ml'},
     'focus_sessions': {
       'id',
       'task_id',

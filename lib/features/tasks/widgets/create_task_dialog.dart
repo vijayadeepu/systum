@@ -57,6 +57,8 @@ class _CreateTaskDialogState extends State<CreateTaskDialog> {
   late final TextEditingController _intervalController;
   late final TextEditingController _maxOccurrencesController;
   late DateTime? _dueDate;
+  late int? _dueTime;
+  late String? _dueTimezone;
   late int _priority;
   late bool _repeats;
   late RecurrenceType _recurrenceType;
@@ -93,6 +95,8 @@ class _CreateTaskDialogState extends State<CreateTaskDialog> {
     final rule = widget.existingRecurrence;
     final draft = rule == null ? null : RecurrenceDraft.fromRule(rule);
     _dueDate = widget.initialDueDate ?? task?.dueDate;
+    _dueTime = task?.dueTime;
+    _dueTimezone = task?.dueTimezone;
     _titleController = TextEditingController(
       text: widget.initialTitle ?? task?.title ?? '',
     );
@@ -142,6 +146,21 @@ class _CreateTaskDialogState extends State<CreateTaskDialog> {
 
     if (pickedDate != null && mounted) {
       setState(() => _dueDate = pickedDate);
+    }
+  }
+
+  Future<void> _pickDueTime() async {
+    final pickedTime = await showTimePicker(
+      context: context,
+      initialTime: _dueTime != null
+          ? TimeOfDay(hour: _dueTime! ~/ 3600, minute: (_dueTime! % 3600) ~/ 60)
+          : TimeOfDay.now(),
+    );
+
+    if (pickedTime != null && mounted) {
+      setState(() {
+        _dueTime = pickedTime.hour * 3600 + pickedTime.minute * 60;
+      });
     }
   }
 
@@ -271,6 +290,8 @@ class _CreateTaskDialogState extends State<CreateTaskDialog> {
               createdAt: now,
               updatedAt: now,
               dueDate: _dueDate,
+              dueTime: _dueTime,
+              dueTimezone: _dueTimezone,
               priority: _priority,
               category: category,
             )
@@ -279,6 +300,8 @@ class _CreateTaskDialogState extends State<CreateTaskDialog> {
               description: description,
               updatedAt: now,
               dueDate: _dueDate,
+              dueTime: _dueTime,
+              dueTimezone: _dueTimezone,
               priority: _priority,
               category: category,
             );
@@ -365,10 +388,32 @@ class _CreateTaskDialogState extends State<CreateTaskDialog> {
                 onTap: _pickDueDate,
                 onClear: _dueDate == null
                     ? null
-                    : () => setState(() => _dueDate = null),
+                    : () => setState(() {
+                        _dueDate = null;
+                        _dueTime = null;
+                        _dueTimezone = null;
+                      }),
                 clearTooltip: 'Clear due date',
               ),
-              const SizedBox(height: AppSpacing.md),
+              if (_dueDate != null) ...[
+                const SizedBox(height: AppSpacing.sm),
+                _TimeSelector(
+                  label: _dueTime == null
+                      ? 'Due time (optional)'
+                      : 'Due ${_dueTimeLabel(_dueTime)}',
+                  semanticsLabel: _dueTime == null
+                      ? 'Choose due time'
+                      : 'Due time ${_dueTimeLabel(_dueTime)}',
+                  onTap: _pickDueTime,
+                  onClear: _dueTime == null
+                      ? null
+                      : () => setState(() {
+                          _dueTime = null;
+                        }),
+                  clearTooltip: 'Clear due time',
+                ),
+                const SizedBox(height: AppSpacing.md),
+              ],
               DropdownButtonFormField<int>(
                 initialValue: _priority,
                 decoration: const InputDecoration(labelText: 'Priority'),
@@ -575,6 +620,65 @@ const List<String> _weekdayShortNames = [
   'Fri',
   'Sat',
 ];
+
+/// Human-readable HH:MM label for [_dueTime].
+String _dueTimeLabel(int? dueTime) {
+  if (dueTime == null) return '';
+  final hours = dueTime ~/ 3600;
+  final minutes = (dueTime % 3600) ~/ 60;
+  return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}';
+}
+
+/// A selectable due-time field, mirroring [_DateSelector].
+class _TimeSelector extends StatelessWidget {
+  const _TimeSelector({
+    required this.label,
+    required this.semanticsLabel,
+    required this.onTap,
+    this.onClear,
+    this.clearTooltip = 'Clear time',
+  });
+
+  final String label;
+  final String semanticsLabel;
+  final VoidCallback onTap;
+  final VoidCallback? onClear;
+  final String clearTooltip;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: AppRadius.medium,
+      onTap: onTap,
+      child: Semantics(
+        button: true,
+        label: semanticsLabel,
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.sm,
+          ),
+          decoration: BoxDecoration(
+            border: Border.all(color: Theme.of(context).colorScheme.outline),
+            borderRadius: AppRadius.medium,
+          ),
+          child: Row(
+            children: [
+              Expanded(child: Text(label, style: AppTypography.body)),
+              if (onClear != null)
+                IconButton(
+                  tooltip: clearTooltip,
+                  onPressed: onClear,
+                  icon: const Icon(Icons.clear_rounded),
+                ),
+              const Icon(Icons.access_time_outlined),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 class _DateSelector extends StatelessWidget {
   const _DateSelector({
