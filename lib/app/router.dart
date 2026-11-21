@@ -8,6 +8,7 @@ import '../features/focus/screens/focus_history_page.dart';
 import '../features/home/home_page.dart';
 import '../features/hydration/screens/hydration_details_page.dart';
 import '../features/hydration/screens/hydration_settings_page.dart';
+import '../features/reminders/screens/reminders_page.dart';
 import '../features/settings/screens/settings_page.dart';
 import '../features/tasks/screens/daily_agenda_page.dart';
 import '../features/tasks/screens/task_detail_page.dart';
@@ -67,6 +68,7 @@ final appRouter = GoRouter(
       '/agenda',
       '/calendar',
       '/hydration',
+      '/reminders',
       '/settings',
     };
     if (known.contains(uri.path)) return null;
@@ -119,6 +121,10 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/hydration',
       builder: (context, state) => const HydrationDetailsPage(),
+    ),
+    GoRoute(
+      path: '/reminders',
+      builder: (context, state) => const RemindersPage(),
     ),
     GoRoute(
       path: '/settings',

@@ -381,7 +381,7 @@ class _CreateTaskDialogState extends State<CreateTaskDialog> {
               _DateSelector(
                 label: _dueDate == null
                     ? 'Due date (optional)'
-                    : 'Due ${formatDate(_dueDate!)}',
+                    : 'Due date: ${formatDate(_dueDate!)}',
                 semanticsLabel: _dueDate == null
                     ? 'Choose due date'
                     : 'Due date ${formatDate(_dueDate!)}',
@@ -400,7 +400,7 @@ class _CreateTaskDialogState extends State<CreateTaskDialog> {
                 _TimeSelector(
                   label: _dueTime == null
                       ? 'Due time (optional)'
-                      : 'Due ${_dueTimeLabel(_dueTime)}',
+                        : 'Due time: ${_dueTimeLabel(_dueTime)}',
                   semanticsLabel: _dueTime == null
                       ? 'Choose due time'
                       : 'Due time ${_dueTimeLabel(_dueTime)}',
@@ -416,16 +416,19 @@ class _CreateTaskDialogState extends State<CreateTaskDialog> {
               ],
               DropdownButtonFormField<int>(
                 initialValue: _priority,
-                decoration: const InputDecoration(labelText: 'Priority'),
+                decoration: const InputDecoration(
+                  labelText: 'Priority',
+                  helperText: 'Low, medium, or high',
+                ),
                 items: [
                   if (_priority < 1 || _priority > 3)
                     DropdownMenuItem(
                       value: _priority,
                       child: const Text('Low'),
                     ),
-                  const DropdownMenuItem(value: 1, child: Text('Low')),
-                  DropdownMenuItem(value: 2, child: Text('Medium')),
-                  DropdownMenuItem(value: 3, child: Text('High')),
+                  _priorityItem(1, 'Low', const Color(0xFF2E7D32)),
+                  _priorityItem(2, 'Medium', const Color(0xFFEF6C00)),
+                  _priorityItem(3, 'High', const Color(0xFFC62828)),
                 ],
                 onChanged: (priority) {
                   if (priority != null) {
@@ -473,6 +476,23 @@ class _CreateTaskDialogState extends State<CreateTaskDialog> {
         else
           FilledButton(onPressed: _submit, child: Text(_submitLabel)),
       ],
+    );
+  }
+
+  DropdownMenuItem<int> _priorityItem(int value, String label, Color color) {
+    return DropdownMenuItem(
+      value: value,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.circle, size: 10, color: color),
+          const SizedBox(width: AppSpacing.sm),
+          Text(
+            label,
+            style: TextStyle(color: color, fontWeight: FontWeight.w600),
+          ),
+        ],
+      ),
     );
   }
 
@@ -556,7 +576,7 @@ class _CreateTaskDialogState extends State<CreateTaskDialog> {
         ],
         const SizedBox(height: AppSpacing.md),
         _DateSelector(
-          label: 'Starts ${formatDateOnly(_recurrenceStart)}',
+          label: 'Start date: ${formatDateOnly(_recurrenceStart)}',
           semanticsLabel:
               'Recurrence start date ${formatDateOnly(_recurrenceStart)}',
           onTap: _pickRecurrenceStart,
@@ -565,7 +585,7 @@ class _CreateTaskDialogState extends State<CreateTaskDialog> {
         _DateSelector(
           label: _recurrenceEnd == null
               ? 'End date (optional)'
-              : 'Ends ${formatDateOnly(_recurrenceEnd!)}',
+              : 'End date: ${formatDateOnly(_recurrenceEnd!)}',
           semanticsLabel: _recurrenceEnd == null
               ? 'Choose recurrence end date'
               : 'Recurrence end date ${formatDateOnly(_recurrenceEnd!)}',

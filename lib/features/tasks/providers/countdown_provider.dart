@@ -95,11 +95,10 @@ String formatCountdown(Duration duration) {
 }
 
 /// Computes the countdown result for a single task row using [now] as the
-/// reference time. Only tasks with both [dueDate] and [dueTime] set, that are
-/// not completed, receive an active countdown. Date-only tasks (due date
-/// without due time) return [CountdownStatus.none].
+/// reference time. Tasks with a due time count down to that time; date-only
+/// tasks count down to the end of their due date in the task timezone.
 CountdownResult computeTaskCountdown(TaskRow task, {DateTime? now}) {
-  if (task.completed || task.dueDate == null || task.dueTime == null) {
+  if (task.completed || task.dueDate == null) {
     return const CountdownResult(status: CountdownStatus.none);
   }
 
@@ -115,7 +114,9 @@ CountdownResult computeTaskCountdown(TaskRow task, {DateTime? now}) {
     isUtc: true,
   );
   final tzDate = tz.TZDateTime.from(utcDate, location);
-  final deadline = tzDate.add(Duration(seconds: task.dueTime!));
+  final deadline = tzDate.add(
+    Duration(seconds: task.dueTime ?? const Duration(days: 1).inSeconds - 1),
+  );
   final deadlineUtc = deadline.toUtc();
 
   final referenceUtc = (now ?? tz.TZDateTime.now(location).toUtc());
@@ -136,7 +137,7 @@ CountdownResult computeTaskCountdown(TaskRow task, {DateTime? now}) {
   );
 }
 
-/// Computes countdown results for all tasks with due times.
+/// Computes countdown results for all tasks with due dates.
 Map<String, CountdownResult> computeAllCountdowns(
   List<TaskRow> tasks, {
   DateTime? now,

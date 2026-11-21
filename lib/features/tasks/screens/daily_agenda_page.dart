@@ -619,7 +619,7 @@ class _CalendarGrid extends ConsumerWidget {
                           style: AppTypography.body.copyWith(
                             color: isToday
                                 ? Theme.of(context).colorScheme.primary
-                                : null,
+                                : Theme.of(context).colorScheme.onSurface,
                             fontWeight: isToday || isSelected
                                 ? FontWeight.w600
                                 : null,

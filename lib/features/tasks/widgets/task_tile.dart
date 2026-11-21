@@ -74,7 +74,7 @@ class TaskTile extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.sm,
-            vertical: AppSpacing.xs,
+            vertical: AppSpacing.xxs,
           ),
           child: LayoutBuilder(
             builder: (context, constraints) {
@@ -91,8 +91,11 @@ class TaskTile extends StatelessWidget {
                       children: [
                         Text(
                           task.title,
-                          style: AppTypography.body,
-                          maxLines: 2,
+                          style: AppTypography.body.copyWith(
+                            color: Theme.of(context).colorScheme.onSurface,
+                            fontSize: 15,
+                          ),
+                          maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                         if (dueDateText != null)
@@ -175,68 +178,62 @@ class TaskTile extends StatelessWidget {
                       ),
                     ),
                   ],
-                  if (onAssignGoal != null ||
-                      onRemoveFromGoal != null ||
-                      onStartFocus != null)
-                    PopupMenuButton<_TaskTileAction>(
-                      tooltip: onAssignGoal != null || onRemoveFromGoal != null
-                          ? 'Goal actions for ${task.title}'
-                          : 'Task actions for ${task.title}',
-                      onSelected: (action) {
-                        switch (action) {
-                          case _TaskTileAction.assign:
-                            onAssignGoal?.call();
-                          case _TaskTileAction.open:
-                            onOpenGoal?.call();
-                          case _TaskTileAction.remove:
-                            onRemoveFromGoal?.call();
-                          case _TaskTileAction.focus:
-                            onStartFocus?.call();
-                        }
-                      },
-                      itemBuilder: (context) => [
-                        if (onStartFocus != null)
-                          const PopupMenuItem(
-                            value: _TaskTileAction.focus,
-                            child: Text('Start focus'),
-                          ),
-                        if (onAssignGoal != null)
-                          PopupMenuItem(
-                            value: _TaskTileAction.assign,
-                            child: Text(
-                              goalTitle == null
-                                  ? 'Assign to goal'
-                                  : 'Change goal',
-                            ),
-                          ),
-                        if (goalTitle != null && onOpenGoal != null)
-                          const PopupMenuItem(
-                            value: _TaskTileAction.open,
-                            child: Text('Open goal'),
-                          ),
-                        if (onRemoveFromGoal != null)
-                          const PopupMenuItem(
-                            value: _TaskTileAction.remove,
-                            child: Text('Remove from goal'),
-                          ),
-                      ],
-                      icon: const Icon(Icons.flag_outlined),
-                    ),
-                  if (onAddSubtask != null)
-                    IconButton(
-                      tooltip: 'Add subtask to ${task.title}',
-                      onPressed: onAddSubtask,
-                      icon: const Icon(Icons.subdirectory_arrow_right_rounded),
-                    ),
-                  IconButton(
-                    tooltip: 'Edit ${task.title}',
-                    onPressed: onEdit,
-                    icon: const Icon(Icons.edit_outlined),
-                  ),
-                  IconButton(
-                    tooltip: 'Delete ${task.title}',
-                    onPressed: onDelete,
-                    icon: const Icon(Icons.delete_outline),
+                  PopupMenuButton<_TaskTileAction>(
+                    tooltip: 'More actions for ${task.title}',
+                    onSelected: (action) {
+                      switch (action) {
+                        case _TaskTileAction.edit:
+                          onEdit();
+                        case _TaskTileAction.delete:
+                          onDelete();
+                        case _TaskTileAction.addSubtask:
+                          onAddSubtask?.call();
+                        case _TaskTileAction.assign:
+                          onAssignGoal?.call();
+                        case _TaskTileAction.open:
+                          onOpenGoal?.call();
+                        case _TaskTileAction.remove:
+                          onRemoveFromGoal?.call();
+                        case _TaskTileAction.focus:
+                          onStartFocus?.call();
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      const PopupMenuItem(
+                        value: _TaskTileAction.edit,
+                        child: Text('Edit task'),
+                      ),
+                      const PopupMenuItem(
+                        value: _TaskTileAction.delete,
+                        child: Text('Delete task'),
+                      ),
+                      if (onAddSubtask != null)
+                        const PopupMenuItem(
+                          value: _TaskTileAction.addSubtask,
+                          child: Text('Add subtask'),
+                        ),
+                      if (onStartFocus != null)
+                        const PopupMenuItem(
+                          value: _TaskTileAction.focus,
+                          child: Text('Start focus'),
+                        ),
+                      if (onAssignGoal != null)
+                        PopupMenuItem(
+                          value: _TaskTileAction.assign,
+                          child: Text(goalTitle == null ? 'Assign to goal' : 'Change goal'),
+                        ),
+                      if (goalTitle != null && onOpenGoal != null)
+                        const PopupMenuItem(
+                          value: _TaskTileAction.open,
+                          child: Text('Open goal'),
+                        ),
+                      if (onRemoveFromGoal != null)
+                        const PopupMenuItem(
+                          value: _TaskTileAction.remove,
+                          child: Text('Remove from goal'),
+                        ),
+                    ],
+                    icon: const Icon(Icons.more_vert_rounded),
                   ),
                 ],
               );
@@ -328,7 +325,15 @@ class TaskTile extends StatelessWidget {
   }
 }
 
-enum _TaskTileAction { assign, open, remove, focus }
+enum _TaskTileAction {
+  edit,
+  delete,
+  addSubtask,
+  assign,
+  open,
+  remove,
+  focus,
+}
 
 class _GoalLink extends StatelessWidget {
   const _GoalLink({

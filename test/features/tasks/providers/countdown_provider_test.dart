@@ -47,7 +47,7 @@ void main() {
   });
 
   group('computeTaskCountdown', () {
-    test('returns none for date-only task', () {
+    test('counts down to the end of a date-only task', () {
       final task = TaskRow(
         id: 'date-only',
         title: 'Date only',
@@ -64,9 +64,12 @@ void main() {
         parentTaskId: null,
       );
 
-      final result = computeTaskCountdown(task);
-      expect(result.status, CountdownStatus.none);
-      expect(result.hasCountdown, isFalse);
+      final result = computeTaskCountdown(
+        task,
+        now: DateTime(2026, 8, 14, 12),
+      );
+      expect(result.status, CountdownStatus.active);
+      expect(result.hasCountdown, isTrue);
     });
 
     test('returns none for completed task with due time', () {

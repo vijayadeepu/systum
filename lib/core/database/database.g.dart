@@ -4658,6 +4658,1391 @@ class RemindersCompanion extends UpdateCompanion<ReminderRow> {
   }
 }
 
+class $ActivitiesTable extends Activities
+    with TableInfo<$ActivitiesTable, ActivityRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ActivitiesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _descriptionMeta = const VerificationMeta(
+    'description',
+  );
+  @override
+  late final GeneratedColumn<String> description = GeneratedColumn<String>(
+    'description',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _targetNameMeta = const VerificationMeta(
+    'targetName',
+  );
+  @override
+  late final GeneratedColumn<String> targetName = GeneratedColumn<String>(
+    'target_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _targetTypeMeta = const VerificationMeta(
+    'targetType',
+  );
+  @override
+  late final GeneratedColumn<String> targetType = GeneratedColumn<String>(
+    'target_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _accountIdentifierMeta = const VerificationMeta(
+    'accountIdentifier',
+  );
+  @override
+  late final GeneratedColumn<String> accountIdentifier =
+      GeneratedColumn<String>(
+        'account_identifier',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _cadenceTypeMeta = const VerificationMeta(
+    'cadenceType',
+  );
+  @override
+  late final GeneratedColumn<String> cadenceType = GeneratedColumn<String>(
+    'cadence_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _intervalMeta = const VerificationMeta(
+    'interval',
+  );
+  @override
+  late final GeneratedColumn<int> interval = GeneratedColumn<int>(
+    'interval',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
+  static const VerificationMeta _weekdaysMeta = const VerificationMeta(
+    'weekdays',
+  );
+  @override
+  late final GeneratedColumn<int> weekdays = GeneratedColumn<int>(
+    'weekdays',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _startDateMsMeta = const VerificationMeta(
+    'startDateMs',
+  );
+  @override
+  late final GeneratedColumn<int> startDateMs = GeneratedColumn<int>(
+    'start_date_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _localTimeSecondsMeta = const VerificationMeta(
+    'localTimeSeconds',
+  );
+  @override
+  late final GeneratedColumn<int> localTimeSeconds = GeneratedColumn<int>(
+    'local_time_seconds',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _timezoneIdMeta = const VerificationMeta(
+    'timezoneId',
+  );
+  @override
+  late final GeneratedColumn<String> timezoneId = GeneratedColumn<String>(
+    'timezone_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _lastCompletedAtMsMeta = const VerificationMeta(
+    'lastCompletedAtMs',
+  );
+  @override
+  late final GeneratedColumn<int> lastCompletedAtMs = GeneratedColumn<int>(
+    'last_completed_at_ms',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('active'),
+  );
+  static const VerificationMeta _notificationEnabledMeta =
+      const VerificationMeta('notificationEnabled');
+  @override
+  late final GeneratedColumn<bool> notificationEnabled = GeneratedColumn<bool>(
+    'notification_enabled',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("notification_enabled" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _createdAtMsMeta = const VerificationMeta(
+    'createdAtMs',
+  );
+  @override
+  late final GeneratedColumn<int> createdAtMs = GeneratedColumn<int>(
+    'created_at_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMsMeta = const VerificationMeta(
+    'updatedAtMs',
+  );
+  @override
+  late final GeneratedColumn<int> updatedAtMs = GeneratedColumn<int>(
+    'updated_at_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    description,
+    targetName,
+    targetType,
+    accountIdentifier,
+    cadenceType,
+    interval,
+    weekdays,
+    startDateMs,
+    localTimeSeconds,
+    timezoneId,
+    lastCompletedAtMs,
+    status,
+    notificationEnabled,
+    createdAtMs,
+    updatedAtMs,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'activities';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ActivityRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('description')) {
+      context.handle(
+        _descriptionMeta,
+        description.isAcceptableOrUnknown(
+          data['description']!,
+          _descriptionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('target_name')) {
+      context.handle(
+        _targetNameMeta,
+        targetName.isAcceptableOrUnknown(data['target_name']!, _targetNameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_targetNameMeta);
+    }
+    if (data.containsKey('target_type')) {
+      context.handle(
+        _targetTypeMeta,
+        targetType.isAcceptableOrUnknown(data['target_type']!, _targetTypeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_targetTypeMeta);
+    }
+    if (data.containsKey('account_identifier')) {
+      context.handle(
+        _accountIdentifierMeta,
+        accountIdentifier.isAcceptableOrUnknown(
+          data['account_identifier']!,
+          _accountIdentifierMeta,
+        ),
+      );
+    }
+    if (data.containsKey('cadence_type')) {
+      context.handle(
+        _cadenceTypeMeta,
+        cadenceType.isAcceptableOrUnknown(
+          data['cadence_type']!,
+          _cadenceTypeMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_cadenceTypeMeta);
+    }
+    if (data.containsKey('interval')) {
+      context.handle(
+        _intervalMeta,
+        interval.isAcceptableOrUnknown(data['interval']!, _intervalMeta),
+      );
+    }
+    if (data.containsKey('weekdays')) {
+      context.handle(
+        _weekdaysMeta,
+        weekdays.isAcceptableOrUnknown(data['weekdays']!, _weekdaysMeta),
+      );
+    }
+    if (data.containsKey('start_date_ms')) {
+      context.handle(
+        _startDateMsMeta,
+        startDateMs.isAcceptableOrUnknown(
+          data['start_date_ms']!,
+          _startDateMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_startDateMsMeta);
+    }
+    if (data.containsKey('local_time_seconds')) {
+      context.handle(
+        _localTimeSecondsMeta,
+        localTimeSeconds.isAcceptableOrUnknown(
+          data['local_time_seconds']!,
+          _localTimeSecondsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('timezone_id')) {
+      context.handle(
+        _timezoneIdMeta,
+        timezoneId.isAcceptableOrUnknown(data['timezone_id']!, _timezoneIdMeta),
+      );
+    }
+    if (data.containsKey('last_completed_at_ms')) {
+      context.handle(
+        _lastCompletedAtMsMeta,
+        lastCompletedAtMs.isAcceptableOrUnknown(
+          data['last_completed_at_ms']!,
+          _lastCompletedAtMsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    }
+    if (data.containsKey('notification_enabled')) {
+      context.handle(
+        _notificationEnabledMeta,
+        notificationEnabled.isAcceptableOrUnknown(
+          data['notification_enabled']!,
+          _notificationEnabledMeta,
+        ),
+      );
+    }
+    if (data.containsKey('created_at_ms')) {
+      context.handle(
+        _createdAtMsMeta,
+        createdAtMs.isAcceptableOrUnknown(
+          data['created_at_ms']!,
+          _createdAtMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMsMeta);
+    }
+    if (data.containsKey('updated_at_ms')) {
+      context.handle(
+        _updatedAtMsMeta,
+        updatedAtMs.isAcceptableOrUnknown(
+          data['updated_at_ms']!,
+          _updatedAtMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMsMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ActivityRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ActivityRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      description: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}description'],
+      ),
+      targetName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}target_name'],
+      )!,
+      targetType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}target_type'],
+      )!,
+      accountIdentifier: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}account_identifier'],
+      ),
+      cadenceType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}cadence_type'],
+      )!,
+      interval: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}interval'],
+      )!,
+      weekdays: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}weekdays'],
+      ),
+      startDateMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}start_date_ms'],
+      )!,
+      localTimeSeconds: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}local_time_seconds'],
+      ),
+      timezoneId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}timezone_id'],
+      ),
+      lastCompletedAtMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}last_completed_at_ms'],
+      ),
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
+      )!,
+      notificationEnabled: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}notification_enabled'],
+      )!,
+      createdAtMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at_ms'],
+      )!,
+      updatedAtMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}updated_at_ms'],
+      )!,
+    );
+  }
+
+  @override
+  $ActivitiesTable createAlias(String alias) {
+    return $ActivitiesTable(attachedDatabase, alias);
+  }
+}
+
+class ActivityRow extends DataClass implements Insertable<ActivityRow> {
+  final String id;
+  final String name;
+  final String? description;
+  final String targetName;
+  final String targetType;
+  final String? accountIdentifier;
+  final String cadenceType;
+  final int interval;
+  final int? weekdays;
+  final int startDateMs;
+  final int? localTimeSeconds;
+  final String? timezoneId;
+  final int? lastCompletedAtMs;
+  final String status;
+  final bool notificationEnabled;
+  final int createdAtMs;
+  final int updatedAtMs;
+  const ActivityRow({
+    required this.id,
+    required this.name,
+    this.description,
+    required this.targetName,
+    required this.targetType,
+    this.accountIdentifier,
+    required this.cadenceType,
+    required this.interval,
+    this.weekdays,
+    required this.startDateMs,
+    this.localTimeSeconds,
+    this.timezoneId,
+    this.lastCompletedAtMs,
+    required this.status,
+    required this.notificationEnabled,
+    required this.createdAtMs,
+    required this.updatedAtMs,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['name'] = Variable<String>(name);
+    if (!nullToAbsent || description != null) {
+      map['description'] = Variable<String>(description);
+    }
+    map['target_name'] = Variable<String>(targetName);
+    map['target_type'] = Variable<String>(targetType);
+    if (!nullToAbsent || accountIdentifier != null) {
+      map['account_identifier'] = Variable<String>(accountIdentifier);
+    }
+    map['cadence_type'] = Variable<String>(cadenceType);
+    map['interval'] = Variable<int>(interval);
+    if (!nullToAbsent || weekdays != null) {
+      map['weekdays'] = Variable<int>(weekdays);
+    }
+    map['start_date_ms'] = Variable<int>(startDateMs);
+    if (!nullToAbsent || localTimeSeconds != null) {
+      map['local_time_seconds'] = Variable<int>(localTimeSeconds);
+    }
+    if (!nullToAbsent || timezoneId != null) {
+      map['timezone_id'] = Variable<String>(timezoneId);
+    }
+    if (!nullToAbsent || lastCompletedAtMs != null) {
+      map['last_completed_at_ms'] = Variable<int>(lastCompletedAtMs);
+    }
+    map['status'] = Variable<String>(status);
+    map['notification_enabled'] = Variable<bool>(notificationEnabled);
+    map['created_at_ms'] = Variable<int>(createdAtMs);
+    map['updated_at_ms'] = Variable<int>(updatedAtMs);
+    return map;
+  }
+
+  ActivitiesCompanion toCompanion(bool nullToAbsent) {
+    return ActivitiesCompanion(
+      id: Value(id),
+      name: Value(name),
+      description: description == null && nullToAbsent
+          ? const Value.absent()
+          : Value(description),
+      targetName: Value(targetName),
+      targetType: Value(targetType),
+      accountIdentifier: accountIdentifier == null && nullToAbsent
+          ? const Value.absent()
+          : Value(accountIdentifier),
+      cadenceType: Value(cadenceType),
+      interval: Value(interval),
+      weekdays: weekdays == null && nullToAbsent
+          ? const Value.absent()
+          : Value(weekdays),
+      startDateMs: Value(startDateMs),
+      localTimeSeconds: localTimeSeconds == null && nullToAbsent
+          ? const Value.absent()
+          : Value(localTimeSeconds),
+      timezoneId: timezoneId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(timezoneId),
+      lastCompletedAtMs: lastCompletedAtMs == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastCompletedAtMs),
+      status: Value(status),
+      notificationEnabled: Value(notificationEnabled),
+      createdAtMs: Value(createdAtMs),
+      updatedAtMs: Value(updatedAtMs),
+    );
+  }
+
+  factory ActivityRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ActivityRow(
+      id: serializer.fromJson<String>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      description: serializer.fromJson<String?>(json['description']),
+      targetName: serializer.fromJson<String>(json['targetName']),
+      targetType: serializer.fromJson<String>(json['targetType']),
+      accountIdentifier: serializer.fromJson<String?>(
+        json['accountIdentifier'],
+      ),
+      cadenceType: serializer.fromJson<String>(json['cadenceType']),
+      interval: serializer.fromJson<int>(json['interval']),
+      weekdays: serializer.fromJson<int?>(json['weekdays']),
+      startDateMs: serializer.fromJson<int>(json['startDateMs']),
+      localTimeSeconds: serializer.fromJson<int?>(json['localTimeSeconds']),
+      timezoneId: serializer.fromJson<String?>(json['timezoneId']),
+      lastCompletedAtMs: serializer.fromJson<int?>(json['lastCompletedAtMs']),
+      status: serializer.fromJson<String>(json['status']),
+      notificationEnabled: serializer.fromJson<bool>(
+        json['notificationEnabled'],
+      ),
+      createdAtMs: serializer.fromJson<int>(json['createdAtMs']),
+      updatedAtMs: serializer.fromJson<int>(json['updatedAtMs']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'name': serializer.toJson<String>(name),
+      'description': serializer.toJson<String?>(description),
+      'targetName': serializer.toJson<String>(targetName),
+      'targetType': serializer.toJson<String>(targetType),
+      'accountIdentifier': serializer.toJson<String?>(accountIdentifier),
+      'cadenceType': serializer.toJson<String>(cadenceType),
+      'interval': serializer.toJson<int>(interval),
+      'weekdays': serializer.toJson<int?>(weekdays),
+      'startDateMs': serializer.toJson<int>(startDateMs),
+      'localTimeSeconds': serializer.toJson<int?>(localTimeSeconds),
+      'timezoneId': serializer.toJson<String?>(timezoneId),
+      'lastCompletedAtMs': serializer.toJson<int?>(lastCompletedAtMs),
+      'status': serializer.toJson<String>(status),
+      'notificationEnabled': serializer.toJson<bool>(notificationEnabled),
+      'createdAtMs': serializer.toJson<int>(createdAtMs),
+      'updatedAtMs': serializer.toJson<int>(updatedAtMs),
+    };
+  }
+
+  ActivityRow copyWith({
+    String? id,
+    String? name,
+    Value<String?> description = const Value.absent(),
+    String? targetName,
+    String? targetType,
+    Value<String?> accountIdentifier = const Value.absent(),
+    String? cadenceType,
+    int? interval,
+    Value<int?> weekdays = const Value.absent(),
+    int? startDateMs,
+    Value<int?> localTimeSeconds = const Value.absent(),
+    Value<String?> timezoneId = const Value.absent(),
+    Value<int?> lastCompletedAtMs = const Value.absent(),
+    String? status,
+    bool? notificationEnabled,
+    int? createdAtMs,
+    int? updatedAtMs,
+  }) => ActivityRow(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    description: description.present ? description.value : this.description,
+    targetName: targetName ?? this.targetName,
+    targetType: targetType ?? this.targetType,
+    accountIdentifier: accountIdentifier.present
+        ? accountIdentifier.value
+        : this.accountIdentifier,
+    cadenceType: cadenceType ?? this.cadenceType,
+    interval: interval ?? this.interval,
+    weekdays: weekdays.present ? weekdays.value : this.weekdays,
+    startDateMs: startDateMs ?? this.startDateMs,
+    localTimeSeconds: localTimeSeconds.present
+        ? localTimeSeconds.value
+        : this.localTimeSeconds,
+    timezoneId: timezoneId.present ? timezoneId.value : this.timezoneId,
+    lastCompletedAtMs: lastCompletedAtMs.present
+        ? lastCompletedAtMs.value
+        : this.lastCompletedAtMs,
+    status: status ?? this.status,
+    notificationEnabled: notificationEnabled ?? this.notificationEnabled,
+    createdAtMs: createdAtMs ?? this.createdAtMs,
+    updatedAtMs: updatedAtMs ?? this.updatedAtMs,
+  );
+  ActivityRow copyWithCompanion(ActivitiesCompanion data) {
+    return ActivityRow(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      description: data.description.present
+          ? data.description.value
+          : this.description,
+      targetName: data.targetName.present
+          ? data.targetName.value
+          : this.targetName,
+      targetType: data.targetType.present
+          ? data.targetType.value
+          : this.targetType,
+      accountIdentifier: data.accountIdentifier.present
+          ? data.accountIdentifier.value
+          : this.accountIdentifier,
+      cadenceType: data.cadenceType.present
+          ? data.cadenceType.value
+          : this.cadenceType,
+      interval: data.interval.present ? data.interval.value : this.interval,
+      weekdays: data.weekdays.present ? data.weekdays.value : this.weekdays,
+      startDateMs: data.startDateMs.present
+          ? data.startDateMs.value
+          : this.startDateMs,
+      localTimeSeconds: data.localTimeSeconds.present
+          ? data.localTimeSeconds.value
+          : this.localTimeSeconds,
+      timezoneId: data.timezoneId.present
+          ? data.timezoneId.value
+          : this.timezoneId,
+      lastCompletedAtMs: data.lastCompletedAtMs.present
+          ? data.lastCompletedAtMs.value
+          : this.lastCompletedAtMs,
+      status: data.status.present ? data.status.value : this.status,
+      notificationEnabled: data.notificationEnabled.present
+          ? data.notificationEnabled.value
+          : this.notificationEnabled,
+      createdAtMs: data.createdAtMs.present
+          ? data.createdAtMs.value
+          : this.createdAtMs,
+      updatedAtMs: data.updatedAtMs.present
+          ? data.updatedAtMs.value
+          : this.updatedAtMs,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ActivityRow(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('description: $description, ')
+          ..write('targetName: $targetName, ')
+          ..write('targetType: $targetType, ')
+          ..write('accountIdentifier: $accountIdentifier, ')
+          ..write('cadenceType: $cadenceType, ')
+          ..write('interval: $interval, ')
+          ..write('weekdays: $weekdays, ')
+          ..write('startDateMs: $startDateMs, ')
+          ..write('localTimeSeconds: $localTimeSeconds, ')
+          ..write('timezoneId: $timezoneId, ')
+          ..write('lastCompletedAtMs: $lastCompletedAtMs, ')
+          ..write('status: $status, ')
+          ..write('notificationEnabled: $notificationEnabled, ')
+          ..write('createdAtMs: $createdAtMs, ')
+          ..write('updatedAtMs: $updatedAtMs')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    name,
+    description,
+    targetName,
+    targetType,
+    accountIdentifier,
+    cadenceType,
+    interval,
+    weekdays,
+    startDateMs,
+    localTimeSeconds,
+    timezoneId,
+    lastCompletedAtMs,
+    status,
+    notificationEnabled,
+    createdAtMs,
+    updatedAtMs,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ActivityRow &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.description == this.description &&
+          other.targetName == this.targetName &&
+          other.targetType == this.targetType &&
+          other.accountIdentifier == this.accountIdentifier &&
+          other.cadenceType == this.cadenceType &&
+          other.interval == this.interval &&
+          other.weekdays == this.weekdays &&
+          other.startDateMs == this.startDateMs &&
+          other.localTimeSeconds == this.localTimeSeconds &&
+          other.timezoneId == this.timezoneId &&
+          other.lastCompletedAtMs == this.lastCompletedAtMs &&
+          other.status == this.status &&
+          other.notificationEnabled == this.notificationEnabled &&
+          other.createdAtMs == this.createdAtMs &&
+          other.updatedAtMs == this.updatedAtMs);
+}
+
+class ActivitiesCompanion extends UpdateCompanion<ActivityRow> {
+  final Value<String> id;
+  final Value<String> name;
+  final Value<String?> description;
+  final Value<String> targetName;
+  final Value<String> targetType;
+  final Value<String?> accountIdentifier;
+  final Value<String> cadenceType;
+  final Value<int> interval;
+  final Value<int?> weekdays;
+  final Value<int> startDateMs;
+  final Value<int?> localTimeSeconds;
+  final Value<String?> timezoneId;
+  final Value<int?> lastCompletedAtMs;
+  final Value<String> status;
+  final Value<bool> notificationEnabled;
+  final Value<int> createdAtMs;
+  final Value<int> updatedAtMs;
+  final Value<int> rowid;
+  const ActivitiesCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.description = const Value.absent(),
+    this.targetName = const Value.absent(),
+    this.targetType = const Value.absent(),
+    this.accountIdentifier = const Value.absent(),
+    this.cadenceType = const Value.absent(),
+    this.interval = const Value.absent(),
+    this.weekdays = const Value.absent(),
+    this.startDateMs = const Value.absent(),
+    this.localTimeSeconds = const Value.absent(),
+    this.timezoneId = const Value.absent(),
+    this.lastCompletedAtMs = const Value.absent(),
+    this.status = const Value.absent(),
+    this.notificationEnabled = const Value.absent(),
+    this.createdAtMs = const Value.absent(),
+    this.updatedAtMs = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ActivitiesCompanion.insert({
+    required String id,
+    required String name,
+    this.description = const Value.absent(),
+    required String targetName,
+    required String targetType,
+    this.accountIdentifier = const Value.absent(),
+    required String cadenceType,
+    this.interval = const Value.absent(),
+    this.weekdays = const Value.absent(),
+    required int startDateMs,
+    this.localTimeSeconds = const Value.absent(),
+    this.timezoneId = const Value.absent(),
+    this.lastCompletedAtMs = const Value.absent(),
+    this.status = const Value.absent(),
+    this.notificationEnabled = const Value.absent(),
+    required int createdAtMs,
+    required int updatedAtMs,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       name = Value(name),
+       targetName = Value(targetName),
+       targetType = Value(targetType),
+       cadenceType = Value(cadenceType),
+       startDateMs = Value(startDateMs),
+       createdAtMs = Value(createdAtMs),
+       updatedAtMs = Value(updatedAtMs);
+  static Insertable<ActivityRow> custom({
+    Expression<String>? id,
+    Expression<String>? name,
+    Expression<String>? description,
+    Expression<String>? targetName,
+    Expression<String>? targetType,
+    Expression<String>? accountIdentifier,
+    Expression<String>? cadenceType,
+    Expression<int>? interval,
+    Expression<int>? weekdays,
+    Expression<int>? startDateMs,
+    Expression<int>? localTimeSeconds,
+    Expression<String>? timezoneId,
+    Expression<int>? lastCompletedAtMs,
+    Expression<String>? status,
+    Expression<bool>? notificationEnabled,
+    Expression<int>? createdAtMs,
+    Expression<int>? updatedAtMs,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (description != null) 'description': description,
+      if (targetName != null) 'target_name': targetName,
+      if (targetType != null) 'target_type': targetType,
+      if (accountIdentifier != null) 'account_identifier': accountIdentifier,
+      if (cadenceType != null) 'cadence_type': cadenceType,
+      if (interval != null) 'interval': interval,
+      if (weekdays != null) 'weekdays': weekdays,
+      if (startDateMs != null) 'start_date_ms': startDateMs,
+      if (localTimeSeconds != null) 'local_time_seconds': localTimeSeconds,
+      if (timezoneId != null) 'timezone_id': timezoneId,
+      if (lastCompletedAtMs != null) 'last_completed_at_ms': lastCompletedAtMs,
+      if (status != null) 'status': status,
+      if (notificationEnabled != null)
+        'notification_enabled': notificationEnabled,
+      if (createdAtMs != null) 'created_at_ms': createdAtMs,
+      if (updatedAtMs != null) 'updated_at_ms': updatedAtMs,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ActivitiesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? name,
+    Value<String?>? description,
+    Value<String>? targetName,
+    Value<String>? targetType,
+    Value<String?>? accountIdentifier,
+    Value<String>? cadenceType,
+    Value<int>? interval,
+    Value<int?>? weekdays,
+    Value<int>? startDateMs,
+    Value<int?>? localTimeSeconds,
+    Value<String?>? timezoneId,
+    Value<int?>? lastCompletedAtMs,
+    Value<String>? status,
+    Value<bool>? notificationEnabled,
+    Value<int>? createdAtMs,
+    Value<int>? updatedAtMs,
+    Value<int>? rowid,
+  }) {
+    return ActivitiesCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      targetName: targetName ?? this.targetName,
+      targetType: targetType ?? this.targetType,
+      accountIdentifier: accountIdentifier ?? this.accountIdentifier,
+      cadenceType: cadenceType ?? this.cadenceType,
+      interval: interval ?? this.interval,
+      weekdays: weekdays ?? this.weekdays,
+      startDateMs: startDateMs ?? this.startDateMs,
+      localTimeSeconds: localTimeSeconds ?? this.localTimeSeconds,
+      timezoneId: timezoneId ?? this.timezoneId,
+      lastCompletedAtMs: lastCompletedAtMs ?? this.lastCompletedAtMs,
+      status: status ?? this.status,
+      notificationEnabled: notificationEnabled ?? this.notificationEnabled,
+      createdAtMs: createdAtMs ?? this.createdAtMs,
+      updatedAtMs: updatedAtMs ?? this.updatedAtMs,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (description.present) {
+      map['description'] = Variable<String>(description.value);
+    }
+    if (targetName.present) {
+      map['target_name'] = Variable<String>(targetName.value);
+    }
+    if (targetType.present) {
+      map['target_type'] = Variable<String>(targetType.value);
+    }
+    if (accountIdentifier.present) {
+      map['account_identifier'] = Variable<String>(accountIdentifier.value);
+    }
+    if (cadenceType.present) {
+      map['cadence_type'] = Variable<String>(cadenceType.value);
+    }
+    if (interval.present) {
+      map['interval'] = Variable<int>(interval.value);
+    }
+    if (weekdays.present) {
+      map['weekdays'] = Variable<int>(weekdays.value);
+    }
+    if (startDateMs.present) {
+      map['start_date_ms'] = Variable<int>(startDateMs.value);
+    }
+    if (localTimeSeconds.present) {
+      map['local_time_seconds'] = Variable<int>(localTimeSeconds.value);
+    }
+    if (timezoneId.present) {
+      map['timezone_id'] = Variable<String>(timezoneId.value);
+    }
+    if (lastCompletedAtMs.present) {
+      map['last_completed_at_ms'] = Variable<int>(lastCompletedAtMs.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (notificationEnabled.present) {
+      map['notification_enabled'] = Variable<bool>(notificationEnabled.value);
+    }
+    if (createdAtMs.present) {
+      map['created_at_ms'] = Variable<int>(createdAtMs.value);
+    }
+    if (updatedAtMs.present) {
+      map['updated_at_ms'] = Variable<int>(updatedAtMs.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ActivitiesCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('description: $description, ')
+          ..write('targetName: $targetName, ')
+          ..write('targetType: $targetType, ')
+          ..write('accountIdentifier: $accountIdentifier, ')
+          ..write('cadenceType: $cadenceType, ')
+          ..write('interval: $interval, ')
+          ..write('weekdays: $weekdays, ')
+          ..write('startDateMs: $startDateMs, ')
+          ..write('localTimeSeconds: $localTimeSeconds, ')
+          ..write('timezoneId: $timezoneId, ')
+          ..write('lastCompletedAtMs: $lastCompletedAtMs, ')
+          ..write('status: $status, ')
+          ..write('notificationEnabled: $notificationEnabled, ')
+          ..write('createdAtMs: $createdAtMs, ')
+          ..write('updatedAtMs: $updatedAtMs, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ActivityCompletionsTable extends ActivityCompletions
+    with TableInfo<$ActivityCompletionsTable, ActivityCompletionRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ActivityCompletionsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _activityIdMeta = const VerificationMeta(
+    'activityId',
+  );
+  @override
+  late final GeneratedColumn<String> activityId = GeneratedColumn<String>(
+    'activity_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES activities (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _completedAtMsMeta = const VerificationMeta(
+    'completedAtMs',
+  );
+  @override
+  late final GeneratedColumn<int> completedAtMs = GeneratedColumn<int>(
+    'completed_at_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _previousDueAtMsMeta = const VerificationMeta(
+    'previousDueAtMs',
+  );
+  @override
+  late final GeneratedColumn<int> previousDueAtMs = GeneratedColumn<int>(
+    'previous_due_at_ms',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _noteMeta = const VerificationMeta('note');
+  @override
+  late final GeneratedColumn<String> note = GeneratedColumn<String>(
+    'note',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    activityId,
+    completedAtMs,
+    previousDueAtMs,
+    note,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'activity_completions';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ActivityCompletionRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('activity_id')) {
+      context.handle(
+        _activityIdMeta,
+        activityId.isAcceptableOrUnknown(data['activity_id']!, _activityIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_activityIdMeta);
+    }
+    if (data.containsKey('completed_at_ms')) {
+      context.handle(
+        _completedAtMsMeta,
+        completedAtMs.isAcceptableOrUnknown(
+          data['completed_at_ms']!,
+          _completedAtMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_completedAtMsMeta);
+    }
+    if (data.containsKey('previous_due_at_ms')) {
+      context.handle(
+        _previousDueAtMsMeta,
+        previousDueAtMs.isAcceptableOrUnknown(
+          data['previous_due_at_ms']!,
+          _previousDueAtMsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('note')) {
+      context.handle(
+        _noteMeta,
+        note.isAcceptableOrUnknown(data['note']!, _noteMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ActivityCompletionRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ActivityCompletionRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      activityId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}activity_id'],
+      )!,
+      completedAtMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}completed_at_ms'],
+      )!,
+      previousDueAtMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}previous_due_at_ms'],
+      ),
+      note: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}note'],
+      ),
+    );
+  }
+
+  @override
+  $ActivityCompletionsTable createAlias(String alias) {
+    return $ActivityCompletionsTable(attachedDatabase, alias);
+  }
+}
+
+class ActivityCompletionRow extends DataClass
+    implements Insertable<ActivityCompletionRow> {
+  final String id;
+  final String activityId;
+  final int completedAtMs;
+  final int? previousDueAtMs;
+  final String? note;
+  const ActivityCompletionRow({
+    required this.id,
+    required this.activityId,
+    required this.completedAtMs,
+    this.previousDueAtMs,
+    this.note,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['activity_id'] = Variable<String>(activityId);
+    map['completed_at_ms'] = Variable<int>(completedAtMs);
+    if (!nullToAbsent || previousDueAtMs != null) {
+      map['previous_due_at_ms'] = Variable<int>(previousDueAtMs);
+    }
+    if (!nullToAbsent || note != null) {
+      map['note'] = Variable<String>(note);
+    }
+    return map;
+  }
+
+  ActivityCompletionsCompanion toCompanion(bool nullToAbsent) {
+    return ActivityCompletionsCompanion(
+      id: Value(id),
+      activityId: Value(activityId),
+      completedAtMs: Value(completedAtMs),
+      previousDueAtMs: previousDueAtMs == null && nullToAbsent
+          ? const Value.absent()
+          : Value(previousDueAtMs),
+      note: note == null && nullToAbsent ? const Value.absent() : Value(note),
+    );
+  }
+
+  factory ActivityCompletionRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ActivityCompletionRow(
+      id: serializer.fromJson<String>(json['id']),
+      activityId: serializer.fromJson<String>(json['activityId']),
+      completedAtMs: serializer.fromJson<int>(json['completedAtMs']),
+      previousDueAtMs: serializer.fromJson<int?>(json['previousDueAtMs']),
+      note: serializer.fromJson<String?>(json['note']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'activityId': serializer.toJson<String>(activityId),
+      'completedAtMs': serializer.toJson<int>(completedAtMs),
+      'previousDueAtMs': serializer.toJson<int?>(previousDueAtMs),
+      'note': serializer.toJson<String?>(note),
+    };
+  }
+
+  ActivityCompletionRow copyWith({
+    String? id,
+    String? activityId,
+    int? completedAtMs,
+    Value<int?> previousDueAtMs = const Value.absent(),
+    Value<String?> note = const Value.absent(),
+  }) => ActivityCompletionRow(
+    id: id ?? this.id,
+    activityId: activityId ?? this.activityId,
+    completedAtMs: completedAtMs ?? this.completedAtMs,
+    previousDueAtMs: previousDueAtMs.present
+        ? previousDueAtMs.value
+        : this.previousDueAtMs,
+    note: note.present ? note.value : this.note,
+  );
+  ActivityCompletionRow copyWithCompanion(ActivityCompletionsCompanion data) {
+    return ActivityCompletionRow(
+      id: data.id.present ? data.id.value : this.id,
+      activityId: data.activityId.present
+          ? data.activityId.value
+          : this.activityId,
+      completedAtMs: data.completedAtMs.present
+          ? data.completedAtMs.value
+          : this.completedAtMs,
+      previousDueAtMs: data.previousDueAtMs.present
+          ? data.previousDueAtMs.value
+          : this.previousDueAtMs,
+      note: data.note.present ? data.note.value : this.note,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ActivityCompletionRow(')
+          ..write('id: $id, ')
+          ..write('activityId: $activityId, ')
+          ..write('completedAtMs: $completedAtMs, ')
+          ..write('previousDueAtMs: $previousDueAtMs, ')
+          ..write('note: $note')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, activityId, completedAtMs, previousDueAtMs, note);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ActivityCompletionRow &&
+          other.id == this.id &&
+          other.activityId == this.activityId &&
+          other.completedAtMs == this.completedAtMs &&
+          other.previousDueAtMs == this.previousDueAtMs &&
+          other.note == this.note);
+}
+
+class ActivityCompletionsCompanion
+    extends UpdateCompanion<ActivityCompletionRow> {
+  final Value<String> id;
+  final Value<String> activityId;
+  final Value<int> completedAtMs;
+  final Value<int?> previousDueAtMs;
+  final Value<String?> note;
+  final Value<int> rowid;
+  const ActivityCompletionsCompanion({
+    this.id = const Value.absent(),
+    this.activityId = const Value.absent(),
+    this.completedAtMs = const Value.absent(),
+    this.previousDueAtMs = const Value.absent(),
+    this.note = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ActivityCompletionsCompanion.insert({
+    required String id,
+    required String activityId,
+    required int completedAtMs,
+    this.previousDueAtMs = const Value.absent(),
+    this.note = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       activityId = Value(activityId),
+       completedAtMs = Value(completedAtMs);
+  static Insertable<ActivityCompletionRow> custom({
+    Expression<String>? id,
+    Expression<String>? activityId,
+    Expression<int>? completedAtMs,
+    Expression<int>? previousDueAtMs,
+    Expression<String>? note,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (activityId != null) 'activity_id': activityId,
+      if (completedAtMs != null) 'completed_at_ms': completedAtMs,
+      if (previousDueAtMs != null) 'previous_due_at_ms': previousDueAtMs,
+      if (note != null) 'note': note,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ActivityCompletionsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? activityId,
+    Value<int>? completedAtMs,
+    Value<int?>? previousDueAtMs,
+    Value<String?>? note,
+    Value<int>? rowid,
+  }) {
+    return ActivityCompletionsCompanion(
+      id: id ?? this.id,
+      activityId: activityId ?? this.activityId,
+      completedAtMs: completedAtMs ?? this.completedAtMs,
+      previousDueAtMs: previousDueAtMs ?? this.previousDueAtMs,
+      note: note ?? this.note,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (activityId.present) {
+      map['activity_id'] = Variable<String>(activityId.value);
+    }
+    if (completedAtMs.present) {
+      map['completed_at_ms'] = Variable<int>(completedAtMs.value);
+    }
+    if (previousDueAtMs.present) {
+      map['previous_due_at_ms'] = Variable<int>(previousDueAtMs.value);
+    }
+    if (note.present) {
+      map['note'] = Variable<String>(note.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ActivityCompletionsCompanion(')
+          ..write('id: $id, ')
+          ..write('activityId: $activityId, ')
+          ..write('completedAtMs: $completedAtMs, ')
+          ..write('previousDueAtMs: $previousDueAtMs, ')
+          ..write('note: $note, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $HydrationEntriesTable extends HydrationEntries
     with TableInfo<$HydrationEntriesTable, HydrationEntryRow> {
   @override
@@ -5222,6 +6607,9 @@ abstract class _$SystumDatabase extends GeneratedDatabase {
     this,
   );
   late final $RemindersTable reminders = $RemindersTable(this);
+  late final $ActivitiesTable activities = $ActivitiesTable(this);
+  late final $ActivityCompletionsTable activityCompletions =
+      $ActivityCompletionsTable(this);
   late final $HydrationEntriesTable hydrationEntries = $HydrationEntriesTable(
     this,
   );
@@ -5263,6 +6651,10 @@ abstract class _$SystumDatabase extends GeneratedDatabase {
     'reminders_status_idx',
     'CREATE INDEX reminders_status_idx ON reminders (status)',
   );
+  late final Index activityCompletionsActivityIdx = Index(
+    'activity_completions_activity_idx',
+    'CREATE INDEX activity_completions_activity_idx ON activity_completions (activity_id)',
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -5275,6 +6667,8 @@ abstract class _$SystumDatabase extends GeneratedDatabase {
     taskRecurrenceRules,
     taskOccurrences,
     reminders,
+    activities,
+    activityCompletions,
     hydrationEntries,
     hydrationSettingsTable,
     tasksGoalIdIdx,
@@ -5286,6 +6680,7 @@ abstract class _$SystumDatabase extends GeneratedDatabase {
     taskOccurrencesRuleDateUniqueIdx,
     remindersTaskIdIdx,
     remindersStatusIdx,
+    activityCompletionsActivityIdx,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -5323,6 +6718,13 @@ abstract class _$SystumDatabase extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('reminders', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'activities',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('activity_completions', kind: UpdateKind.delete)],
     ),
   ]);
 }
@@ -8945,6 +10347,908 @@ typedef $$RemindersTableProcessedTableManager =
       ReminderRow,
       PrefetchHooks Function({bool taskId})
     >;
+typedef $$ActivitiesTableCreateCompanionBuilder =
+    ActivitiesCompanion Function({
+      required String id,
+      required String name,
+      Value<String?> description,
+      required String targetName,
+      required String targetType,
+      Value<String?> accountIdentifier,
+      required String cadenceType,
+      Value<int> interval,
+      Value<int?> weekdays,
+      required int startDateMs,
+      Value<int?> localTimeSeconds,
+      Value<String?> timezoneId,
+      Value<int?> lastCompletedAtMs,
+      Value<String> status,
+      Value<bool> notificationEnabled,
+      required int createdAtMs,
+      required int updatedAtMs,
+      Value<int> rowid,
+    });
+typedef $$ActivitiesTableUpdateCompanionBuilder =
+    ActivitiesCompanion Function({
+      Value<String> id,
+      Value<String> name,
+      Value<String?> description,
+      Value<String> targetName,
+      Value<String> targetType,
+      Value<String?> accountIdentifier,
+      Value<String> cadenceType,
+      Value<int> interval,
+      Value<int?> weekdays,
+      Value<int> startDateMs,
+      Value<int?> localTimeSeconds,
+      Value<String?> timezoneId,
+      Value<int?> lastCompletedAtMs,
+      Value<String> status,
+      Value<bool> notificationEnabled,
+      Value<int> createdAtMs,
+      Value<int> updatedAtMs,
+      Value<int> rowid,
+    });
+
+final class $$ActivitiesTableReferences
+    extends BaseReferences<_$SystumDatabase, $ActivitiesTable, ActivityRow> {
+  $$ActivitiesTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<
+    $ActivityCompletionsTable,
+    List<ActivityCompletionRow>
+  >
+  _activityCompletionsRefsTable(_$SystumDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.activityCompletions,
+        aliasName: 'activities__id__activity_completions__activity_id',
+      );
+
+  $$ActivityCompletionsTableProcessedTableManager get activityCompletionsRefs {
+    final manager = $$ActivityCompletionsTableTableManager(
+      $_db,
+      $_db.activityCompletions,
+    ).filter((f) => f.activityId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _activityCompletionsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$ActivitiesTableFilterComposer
+    extends Composer<_$SystumDatabase, $ActivitiesTable> {
+  $$ActivitiesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get targetName => $composableBuilder(
+    column: $table.targetName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get targetType => $composableBuilder(
+    column: $table.targetType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get accountIdentifier => $composableBuilder(
+    column: $table.accountIdentifier,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get cadenceType => $composableBuilder(
+    column: $table.cadenceType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get interval => $composableBuilder(
+    column: $table.interval,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get weekdays => $composableBuilder(
+    column: $table.weekdays,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get startDateMs => $composableBuilder(
+    column: $table.startDateMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get localTimeSeconds => $composableBuilder(
+    column: $table.localTimeSeconds,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get timezoneId => $composableBuilder(
+    column: $table.timezoneId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get lastCompletedAtMs => $composableBuilder(
+    column: $table.lastCompletedAtMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get notificationEnabled => $composableBuilder(
+    column: $table.notificationEnabled,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdAtMs => $composableBuilder(
+    column: $table.createdAtMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get updatedAtMs => $composableBuilder(
+    column: $table.updatedAtMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  Expression<bool> activityCompletionsRefs(
+    Expression<bool> Function($$ActivityCompletionsTableFilterComposer f) f,
+  ) {
+    final $$ActivityCompletionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.activityCompletions,
+      getReferencedColumn: (t) => t.activityId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ActivityCompletionsTableFilterComposer(
+            $db: $db,
+            $table: $db.activityCompletions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$ActivitiesTableOrderingComposer
+    extends Composer<_$SystumDatabase, $ActivitiesTable> {
+  $$ActivitiesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get targetName => $composableBuilder(
+    column: $table.targetName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get targetType => $composableBuilder(
+    column: $table.targetType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get accountIdentifier => $composableBuilder(
+    column: $table.accountIdentifier,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get cadenceType => $composableBuilder(
+    column: $table.cadenceType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get interval => $composableBuilder(
+    column: $table.interval,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get weekdays => $composableBuilder(
+    column: $table.weekdays,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get startDateMs => $composableBuilder(
+    column: $table.startDateMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get localTimeSeconds => $composableBuilder(
+    column: $table.localTimeSeconds,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get timezoneId => $composableBuilder(
+    column: $table.timezoneId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get lastCompletedAtMs => $composableBuilder(
+    column: $table.lastCompletedAtMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get notificationEnabled => $composableBuilder(
+    column: $table.notificationEnabled,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAtMs => $composableBuilder(
+    column: $table.createdAtMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get updatedAtMs => $composableBuilder(
+    column: $table.updatedAtMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ActivitiesTableAnnotationComposer
+    extends Composer<_$SystumDatabase, $ActivitiesTable> {
+  $$ActivitiesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get targetName => $composableBuilder(
+    column: $table.targetName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get targetType => $composableBuilder(
+    column: $table.targetType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get accountIdentifier => $composableBuilder(
+    column: $table.accountIdentifier,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get cadenceType => $composableBuilder(
+    column: $table.cadenceType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get interval =>
+      $composableBuilder(column: $table.interval, builder: (column) => column);
+
+  GeneratedColumn<int> get weekdays =>
+      $composableBuilder(column: $table.weekdays, builder: (column) => column);
+
+  GeneratedColumn<int> get startDateMs => $composableBuilder(
+    column: $table.startDateMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get localTimeSeconds => $composableBuilder(
+    column: $table.localTimeSeconds,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get timezoneId => $composableBuilder(
+    column: $table.timezoneId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get lastCompletedAtMs => $composableBuilder(
+    column: $table.lastCompletedAtMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<bool> get notificationEnabled => $composableBuilder(
+    column: $table.notificationEnabled,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get createdAtMs => $composableBuilder(
+    column: $table.createdAtMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get updatedAtMs => $composableBuilder(
+    column: $table.updatedAtMs,
+    builder: (column) => column,
+  );
+
+  Expression<T> activityCompletionsRefs<T extends Object>(
+    Expression<T> Function($$ActivityCompletionsTableAnnotationComposer a) f,
+  ) {
+    final $$ActivityCompletionsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.activityCompletions,
+          getReferencedColumn: (t) => t.activityId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ActivityCompletionsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.activityCompletions,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+}
+
+class $$ActivitiesTableTableManager
+    extends
+        RootTableManager<
+          _$SystumDatabase,
+          $ActivitiesTable,
+          ActivityRow,
+          $$ActivitiesTableFilterComposer,
+          $$ActivitiesTableOrderingComposer,
+          $$ActivitiesTableAnnotationComposer,
+          $$ActivitiesTableCreateCompanionBuilder,
+          $$ActivitiesTableUpdateCompanionBuilder,
+          (ActivityRow, $$ActivitiesTableReferences),
+          ActivityRow,
+          PrefetchHooks Function({bool activityCompletionsRefs})
+        > {
+  $$ActivitiesTableTableManager(_$SystumDatabase db, $ActivitiesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ActivitiesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ActivitiesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ActivitiesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String?> description = const Value.absent(),
+                Value<String> targetName = const Value.absent(),
+                Value<String> targetType = const Value.absent(),
+                Value<String?> accountIdentifier = const Value.absent(),
+                Value<String> cadenceType = const Value.absent(),
+                Value<int> interval = const Value.absent(),
+                Value<int?> weekdays = const Value.absent(),
+                Value<int> startDateMs = const Value.absent(),
+                Value<int?> localTimeSeconds = const Value.absent(),
+                Value<String?> timezoneId = const Value.absent(),
+                Value<int?> lastCompletedAtMs = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<bool> notificationEnabled = const Value.absent(),
+                Value<int> createdAtMs = const Value.absent(),
+                Value<int> updatedAtMs = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ActivitiesCompanion(
+                id: id,
+                name: name,
+                description: description,
+                targetName: targetName,
+                targetType: targetType,
+                accountIdentifier: accountIdentifier,
+                cadenceType: cadenceType,
+                interval: interval,
+                weekdays: weekdays,
+                startDateMs: startDateMs,
+                localTimeSeconds: localTimeSeconds,
+                timezoneId: timezoneId,
+                lastCompletedAtMs: lastCompletedAtMs,
+                status: status,
+                notificationEnabled: notificationEnabled,
+                createdAtMs: createdAtMs,
+                updatedAtMs: updatedAtMs,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String name,
+                Value<String?> description = const Value.absent(),
+                required String targetName,
+                required String targetType,
+                Value<String?> accountIdentifier = const Value.absent(),
+                required String cadenceType,
+                Value<int> interval = const Value.absent(),
+                Value<int?> weekdays = const Value.absent(),
+                required int startDateMs,
+                Value<int?> localTimeSeconds = const Value.absent(),
+                Value<String?> timezoneId = const Value.absent(),
+                Value<int?> lastCompletedAtMs = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<bool> notificationEnabled = const Value.absent(),
+                required int createdAtMs,
+                required int updatedAtMs,
+                Value<int> rowid = const Value.absent(),
+              }) => ActivitiesCompanion.insert(
+                id: id,
+                name: name,
+                description: description,
+                targetName: targetName,
+                targetType: targetType,
+                accountIdentifier: accountIdentifier,
+                cadenceType: cadenceType,
+                interval: interval,
+                weekdays: weekdays,
+                startDateMs: startDateMs,
+                localTimeSeconds: localTimeSeconds,
+                timezoneId: timezoneId,
+                lastCompletedAtMs: lastCompletedAtMs,
+                status: status,
+                notificationEnabled: notificationEnabled,
+                createdAtMs: createdAtMs,
+                updatedAtMs: updatedAtMs,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$ActivitiesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({activityCompletionsRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [
+                if (activityCompletionsRefs) db.activityCompletions,
+              ],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (activityCompletionsRefs)
+                    await $_getPrefetchedData<
+                      ActivityRow,
+                      $ActivitiesTable,
+                      ActivityCompletionRow
+                    >(
+                      currentTable: table,
+                      referencedTable: $$ActivitiesTableReferences
+                          ._activityCompletionsRefsTable(db),
+                      managerFromTypedResult: (p0) =>
+                          $$ActivitiesTableReferences(
+                            db,
+                            table,
+                            p0,
+                          ).activityCompletionsRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where((e) => e.activityId == item.id),
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$ActivitiesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$SystumDatabase,
+      $ActivitiesTable,
+      ActivityRow,
+      $$ActivitiesTableFilterComposer,
+      $$ActivitiesTableOrderingComposer,
+      $$ActivitiesTableAnnotationComposer,
+      $$ActivitiesTableCreateCompanionBuilder,
+      $$ActivitiesTableUpdateCompanionBuilder,
+      (ActivityRow, $$ActivitiesTableReferences),
+      ActivityRow,
+      PrefetchHooks Function({bool activityCompletionsRefs})
+    >;
+typedef $$ActivityCompletionsTableCreateCompanionBuilder =
+    ActivityCompletionsCompanion Function({
+      required String id,
+      required String activityId,
+      required int completedAtMs,
+      Value<int?> previousDueAtMs,
+      Value<String?> note,
+      Value<int> rowid,
+    });
+typedef $$ActivityCompletionsTableUpdateCompanionBuilder =
+    ActivityCompletionsCompanion Function({
+      Value<String> id,
+      Value<String> activityId,
+      Value<int> completedAtMs,
+      Value<int?> previousDueAtMs,
+      Value<String?> note,
+      Value<int> rowid,
+    });
+
+final class $$ActivityCompletionsTableReferences
+    extends
+        BaseReferences<
+          _$SystumDatabase,
+          $ActivityCompletionsTable,
+          ActivityCompletionRow
+        > {
+  $$ActivityCompletionsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $ActivitiesTable _activityIdTable(_$SystumDatabase db) => db.activities
+      .createAlias('activity_completions__activity_id__activities__id');
+
+  $$ActivitiesTableProcessedTableManager get activityId {
+    final $_column = $_itemColumn<String>('activity_id')!;
+
+    final manager = $$ActivitiesTableTableManager(
+      $_db,
+      $_db.activities,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_activityIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$ActivityCompletionsTableFilterComposer
+    extends Composer<_$SystumDatabase, $ActivityCompletionsTable> {
+  $$ActivityCompletionsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get completedAtMs => $composableBuilder(
+    column: $table.completedAtMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get previousDueAtMs => $composableBuilder(
+    column: $table.previousDueAtMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$ActivitiesTableFilterComposer get activityId {
+    final $$ActivitiesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.activityId,
+      referencedTable: $db.activities,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ActivitiesTableFilterComposer(
+            $db: $db,
+            $table: $db.activities,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ActivityCompletionsTableOrderingComposer
+    extends Composer<_$SystumDatabase, $ActivityCompletionsTable> {
+  $$ActivityCompletionsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get completedAtMs => $composableBuilder(
+    column: $table.completedAtMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get previousDueAtMs => $composableBuilder(
+    column: $table.previousDueAtMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$ActivitiesTableOrderingComposer get activityId {
+    final $$ActivitiesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.activityId,
+      referencedTable: $db.activities,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ActivitiesTableOrderingComposer(
+            $db: $db,
+            $table: $db.activities,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ActivityCompletionsTableAnnotationComposer
+    extends Composer<_$SystumDatabase, $ActivityCompletionsTable> {
+  $$ActivityCompletionsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get completedAtMs => $composableBuilder(
+    column: $table.completedAtMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get previousDueAtMs => $composableBuilder(
+    column: $table.previousDueAtMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get note =>
+      $composableBuilder(column: $table.note, builder: (column) => column);
+
+  $$ActivitiesTableAnnotationComposer get activityId {
+    final $$ActivitiesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.activityId,
+      referencedTable: $db.activities,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ActivitiesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.activities,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ActivityCompletionsTableTableManager
+    extends
+        RootTableManager<
+          _$SystumDatabase,
+          $ActivityCompletionsTable,
+          ActivityCompletionRow,
+          $$ActivityCompletionsTableFilterComposer,
+          $$ActivityCompletionsTableOrderingComposer,
+          $$ActivityCompletionsTableAnnotationComposer,
+          $$ActivityCompletionsTableCreateCompanionBuilder,
+          $$ActivityCompletionsTableUpdateCompanionBuilder,
+          (ActivityCompletionRow, $$ActivityCompletionsTableReferences),
+          ActivityCompletionRow,
+          PrefetchHooks Function({bool activityId})
+        > {
+  $$ActivityCompletionsTableTableManager(
+    _$SystumDatabase db,
+    $ActivityCompletionsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ActivityCompletionsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ActivityCompletionsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$ActivityCompletionsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> activityId = const Value.absent(),
+                Value<int> completedAtMs = const Value.absent(),
+                Value<int?> previousDueAtMs = const Value.absent(),
+                Value<String?> note = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ActivityCompletionsCompanion(
+                id: id,
+                activityId: activityId,
+                completedAtMs: completedAtMs,
+                previousDueAtMs: previousDueAtMs,
+                note: note,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String activityId,
+                required int completedAtMs,
+                Value<int?> previousDueAtMs = const Value.absent(),
+                Value<String?> note = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ActivityCompletionsCompanion.insert(
+                id: id,
+                activityId: activityId,
+                completedAtMs: completedAtMs,
+                previousDueAtMs: previousDueAtMs,
+                note: note,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$ActivityCompletionsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({activityId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (activityId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.activityId,
+                                referencedTable:
+                                    $$ActivityCompletionsTableReferences
+                                        ._activityIdTable(db),
+                                referencedColumn:
+                                    $$ActivityCompletionsTableReferences
+                                        ._activityIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$ActivityCompletionsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$SystumDatabase,
+      $ActivityCompletionsTable,
+      ActivityCompletionRow,
+      $$ActivityCompletionsTableFilterComposer,
+      $$ActivityCompletionsTableOrderingComposer,
+      $$ActivityCompletionsTableAnnotationComposer,
+      $$ActivityCompletionsTableCreateCompanionBuilder,
+      $$ActivityCompletionsTableUpdateCompanionBuilder,
+      (ActivityCompletionRow, $$ActivityCompletionsTableReferences),
+      ActivityCompletionRow,
+      PrefetchHooks Function({bool activityId})
+    >;
 typedef $$HydrationEntriesTableCreateCompanionBuilder =
     HydrationEntriesCompanion Function({
       required String id,
@@ -9322,6 +11626,10 @@ class $SystumDatabaseManager {
       $$TaskOccurrencesTableTableManager(_db, _db.taskOccurrences);
   $$RemindersTableTableManager get reminders =>
       $$RemindersTableTableManager(_db, _db.reminders);
+  $$ActivitiesTableTableManager get activities =>
+      $$ActivitiesTableTableManager(_db, _db.activities);
+  $$ActivityCompletionsTableTableManager get activityCompletions =>
+      $$ActivityCompletionsTableTableManager(_db, _db.activityCompletions);
   $$HydrationEntriesTableTableManager get hydrationEntries =>
       $$HydrationEntriesTableTableManager(_db, _db.hydrationEntries);
   $$HydrationSettingsTableTableTableManager get hydrationSettingsTable =>

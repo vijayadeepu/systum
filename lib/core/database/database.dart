@@ -7,6 +7,7 @@ import '../../features/focus/models/focus_session_interval.dart';
 import '../../features/focus/models/focus_session_mode.dart';
 import '../../features/focus/models/focus_session_status.dart';
 import '../../features/reminders/models/reminder_table.dart';
+import '../../features/activities/models/activity_table.dart';
 import '../../features/tasks/models/task_table.dart';
 import '../../features/hydration/models/hydration_entry_table.dart';
 import '../../features/hydration/models/hydration_settings_table.dart';
@@ -23,6 +24,8 @@ part 'database.g.dart';
     TaskRecurrenceRules,
     TaskOccurrences,
     Reminders,
+    Activities,
+    ActivityCompletions,
     HydrationEntries,
     HydrationSettingsTable,
   ],
@@ -33,7 +36,7 @@ final class SystumDatabase extends _$SystumDatabase {
   SystumDatabase.test(super.executor);
 
   @override
-  int get schemaVersion => 10;
+  int get schemaVersion => 11;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -42,6 +45,7 @@ final class SystumDatabase extends _$SystumDatabase {
         await migrator.createAll();
         await _createFocusIndexes();
         await _createReminderIndexes();
+        await _createActivityIndexes();
       });
     },
     onUpgrade: (migrator, from, to) => transaction(() async {
@@ -91,6 +95,11 @@ final class SystumDatabase extends _$SystumDatabase {
       if (from < 10) {
         await migrator.createTable(hydrationSettingsTable);
       }
+      if (from < 11) {
+        await migrator.createTable(activities);
+        await migrator.createTable(activityCompletions);
+        await _createActivityIndexes();
+      }
     }),
     beforeOpen: (_) async {
       await customStatement('PRAGMA foreign_keys = ON');
@@ -109,6 +118,17 @@ final class SystumDatabase extends _$SystumDatabase {
           'ON reminders (task_id)',
       'CREATE INDEX IF NOT EXISTS reminders_status_idx '
           'ON reminders (status)',
+    ]) {
+      await customStatement(statement);
+    }
+  }
+
+  Future<void> _createActivityIndexes() async {
+    for (final statement in const [
+      'CREATE INDEX IF NOT EXISTS activities_status_idx ON activities (status)',
+      'CREATE INDEX IF NOT EXISTS activities_target_idx ON activities (target_name)',
+      'CREATE INDEX IF NOT EXISTS activity_completions_activity_idx ON activity_completions (activity_id)',
+      'CREATE INDEX IF NOT EXISTS activity_completions_completed_idx ON activity_completions (completed_at_ms)',
     ]) {
       await customStatement(statement);
     }

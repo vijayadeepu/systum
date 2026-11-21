@@ -121,7 +121,7 @@ void main() {
         expect(
           (await database.customSelect('PRAGMA user_version').getSingle())
               .read<int>('user_version'),
-          10,
+          11,
         );
         expect(
           await _tableNames(database),
@@ -377,7 +377,7 @@ void main() {
                   .customSelect('PRAGMA user_version')
                   .getSingle())
               .read<int>('user_version'),
-          10,
+          11,
         );
 
         final parent = await (migratedDatabase.select(
@@ -567,7 +567,7 @@ void main() {
     expect(
       (await database.customSelect('PRAGMA user_version').getSingle())
           .read<int>('user_version'),
-      10,
+          11,
     );
   });
 
@@ -625,7 +625,7 @@ void main() {
     expect(
       (await database.customSelect('PRAGMA user_version').getSingle())
           .read<int>('user_version'),
-      10,
+          11,
     );
   });
 
@@ -665,7 +665,7 @@ void main() {
     expect(
       (await database.customSelect('PRAGMA user_version').getSingle())
           .read<int>('user_version'),
-      10,
+          11,
     );
   });
 }
