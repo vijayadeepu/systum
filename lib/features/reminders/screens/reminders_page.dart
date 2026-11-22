@@ -50,9 +50,14 @@ class RemindersPage extends ConsumerWidget {
             loading: () => const LinearProgressIndicator(),
             error: (error, _) => Text('Could not load activities: $error'),
             data: (items) => items.isEmpty
-                ? const Text('No activities yet. Add one to track recurring attention.')
+                ? const Text(
+                    'No activities yet. Add one to track recurring attention.',
+                  )
                 : Column(
-                    children: [for (final activity in items) _ActivityTile(activity: activity, ref: ref)],
+                    children: [
+                      for (final activity in items)
+                        _ActivityTile(activity: activity, ref: ref),
+                    ],
                   ),
           ),
           const SizedBox(height: AppSpacing.lg),
@@ -61,11 +66,17 @@ class RemindersPage extends ConsumerWidget {
             loading: () => const LinearProgressIndicator(),
             error: (error, _) => Text('Could not load reminders: $error'),
             data: (items) => items.isEmpty
-                ? const Text('No task reminders yet. Add reminders from a task.')
+                ? const Text(
+                    'No task reminders yet. Add reminders from a task.',
+                  )
                 : Column(
                     children: [
                       for (final reminder in items)
-                        _ReminderTile(reminder: reminder, taskTitle: titles[reminder.taskId] ?? 'Task unavailable'),
+                        _ReminderTile(
+                          reminder: reminder,
+                          taskTitle:
+                              titles[reminder.taskId] ?? 'Task unavailable',
+                        ),
                     ],
                   ),
           ),
@@ -82,7 +93,14 @@ class _SectionTitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-    child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(title, style: Theme.of(context).textTheme.titleMedium), if (action != null) Text(action!, style: Theme.of(context).textTheme.labelMedium)]),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(title, style: Theme.of(context).textTheme.titleMedium),
+        if (action != null)
+          Text(action!, style: Theme.of(context).textTheme.labelMedium),
+      ],
+    ),
   );
 }
 
@@ -93,30 +111,56 @@ class _ActivityTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final due = activity.nextDue;
-    final overdue = activity.status == ActivityStatus.active && due.isBefore(DateTime.now());
+    final overdue =
+        activity.status == ActivityStatus.active &&
+        due.isBefore(DateTime.now());
     return Card(
       child: ListTile(
-        leading: Icon(activity.status == ActivityStatus.active ? Icons.sync_rounded : Icons.pause_circle_outline),
+        leading: Icon(
+          activity.status == ActivityStatus.active
+              ? Icons.sync_rounded
+              : Icons.pause_circle_outline,
+        ),
         title: Text('${activity.targetName} · ${activity.name}'),
-        subtitle: Text('${activity.description ?? 'Recurring activity'}\n${overdue ? 'Overdue' : 'Due ${due.toLocal()}'}'),
+        subtitle: Text(
+          '${activity.description ?? 'Recurring activity'}\n${overdue ? 'Overdue' : 'Due ${due.toLocal()}'}',
+        ),
         isThreeLine: true,
         trailing: PopupMenuButton<String>(
           onSelected: (value) async {
-            if (value == 'complete') await ref.read(activityActionsProvider).complete(activity.id);
-            if (value == 'pause') await ref.read(activityActionsProvider).setStatus(activity.id, ActivityStatus.paused);
-            if (value == 'resume') await ref.read(activityActionsProvider).setStatus(activity.id, ActivityStatus.active);
-            if (value == 'archive') await ref.read(activityActionsProvider).setStatus(activity.id, ActivityStatus.archived);
+            if (value == 'complete')
+              await ref.read(activityActionsProvider).complete(activity.id);
+            if (value == 'pause')
+              await ref
+                  .read(activityActionsProvider)
+                  .setStatus(activity.id, ActivityStatus.paused);
+            if (value == 'resume')
+              await ref
+                  .read(activityActionsProvider)
+                  .setStatus(activity.id, ActivityStatus.active);
+            if (value == 'archive')
+              await ref
+                  .read(activityActionsProvider)
+                  .setStatus(activity.id, ActivityStatus.archived);
             if (value == 'edit' && context.mounted) {
-              final edited = await showActivityFormDialog(context, activity: activity);
-              if (edited != null) await ref.read(activityActionsProvider).update(edited);
+              final edited = await showActivityFormDialog(
+                context,
+                activity: activity,
+              );
+              if (edited != null)
+                await ref.read(activityActionsProvider).update(edited);
             }
           },
           itemBuilder: (_) => [
-            if (activity.status == ActivityStatus.active) const PopupMenuItem(value: 'complete', child: Text('Complete')),
+            if (activity.status == ActivityStatus.active)
+              const PopupMenuItem(value: 'complete', child: Text('Complete')),
             const PopupMenuItem(value: 'edit', child: Text('Edit')),
-            if (activity.status == ActivityStatus.active) const PopupMenuItem(value: 'pause', child: Text('Pause')),
-            if (activity.status == ActivityStatus.paused) const PopupMenuItem(value: 'resume', child: Text('Resume')),
-            if (activity.status != ActivityStatus.archived) const PopupMenuItem(value: 'archive', child: Text('Archive')),
+            if (activity.status == ActivityStatus.active)
+              const PopupMenuItem(value: 'pause', child: Text('Pause')),
+            if (activity.status == ActivityStatus.paused)
+              const PopupMenuItem(value: 'resume', child: Text('Resume')),
+            if (activity.status != ActivityStatus.archived)
+              const PopupMenuItem(value: 'archive', child: Text('Archive')),
           ],
         ),
       ),
@@ -136,7 +180,7 @@ class _ReminderTile extends StatelessWidget {
         ? '${_label(reminder.scheduleType)}${reminder.localHour == null ? '' : ' at ${_time(reminder.localHour!, reminder.localMinute!)}'}'
         : reminder.scheduledAtUtc == null
         ? 'One-time reminder'
-        : 'At ${reminder.scheduledAtUtc!.toLocal()}' ;
+        : 'At ${reminder.scheduledAtUtc!.toLocal()}';
     return Card(
       child: ListTile(
         leading: Icon(

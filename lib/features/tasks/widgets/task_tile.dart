@@ -179,9 +179,7 @@ class TaskTile extends StatelessWidget {
                     ),
                   ],
                   PopupMenuButton<_TaskTileAction>(
-                    tooltip:
-                        onAssignGoal != null ||
-                            onRemoveFromGoal != null
+                    tooltip: onAssignGoal != null || onRemoveFromGoal != null
                         ? 'Goal actions for ${task.title}'
                         : 'Task actions for ${task.title}',
                     onSelected: (action) {
@@ -224,7 +222,11 @@ class TaskTile extends StatelessWidget {
                       if (onAssignGoal != null)
                         PopupMenuItem(
                           value: _TaskTileAction.assign,
-                          child: Text(goalTitle == null ? 'Assign to goal' : 'Change goal'),
+                          child: Text(
+                            goalTitle == null
+                                ? 'Assign to goal'
+                                : 'Change goal',
+                          ),
                         ),
                       if (goalTitle != null && onOpenGoal != null)
                         const PopupMenuItem(
@@ -329,15 +331,7 @@ class TaskTile extends StatelessWidget {
   }
 }
 
-enum _TaskTileAction {
-  edit,
-  delete,
-  addSubtask,
-  assign,
-  open,
-  remove,
-  focus,
-}
+enum _TaskTileAction { edit, delete, addSubtask, assign, open, remove, focus }
 
 class _GoalLink extends StatelessWidget {
   const _GoalLink({

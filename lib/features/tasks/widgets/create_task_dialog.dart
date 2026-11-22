@@ -400,7 +400,7 @@ class _CreateTaskDialogState extends State<CreateTaskDialog> {
                 _TimeSelector(
                   label: _dueTime == null
                       ? 'Due time (optional)'
-                        : 'Due time: ${_dueTimeLabel(_dueTime)}',
+                      : 'Due time: ${_dueTimeLabel(_dueTime)}',
                   semanticsLabel: _dueTime == null
                       ? 'Choose due time'
                       : 'Due time ${_dueTimeLabel(_dueTime)}',

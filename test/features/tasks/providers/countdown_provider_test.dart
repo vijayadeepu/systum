@@ -64,10 +64,7 @@ void main() {
         parentTaskId: null,
       );
 
-      final result = computeTaskCountdown(
-        task,
-        now: DateTime(2026, 8, 14, 12),
-      );
+      final result = computeTaskCountdown(task, now: DateTime(2026, 8, 14, 12));
       expect(result.status, CountdownStatus.active);
       expect(result.hasCountdown, isTrue);
     });

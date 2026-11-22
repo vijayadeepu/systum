@@ -17,7 +17,8 @@ class Activities extends Table {
   TextColumn get timezoneId => text().nullable()();
   IntColumn get lastCompletedAtMs => integer().nullable()();
   TextColumn get status => text().withDefault(const Constant('active'))();
-  BoolColumn get notificationEnabled => boolean().withDefault(const Constant(false))();
+  BoolColumn get notificationEnabled =>
+      boolean().withDefault(const Constant(false))();
   IntColumn get createdAtMs => integer()();
   IntColumn get updatedAtMs => integer()();
 
@@ -29,7 +30,8 @@ class Activities extends Table {
 @DataClassName('ActivityCompletionRow')
 class ActivityCompletions extends Table {
   TextColumn get id => text()();
-  TextColumn get activityId => text().references(Activities, #id, onDelete: KeyAction.cascade)();
+  TextColumn get activityId =>
+      text().references(Activities, #id, onDelete: KeyAction.cascade)();
   IntColumn get completedAtMs => integer()();
   IntColumn get previousDueAtMs => integer().nullable()();
   TextColumn get note => text().nullable()();
