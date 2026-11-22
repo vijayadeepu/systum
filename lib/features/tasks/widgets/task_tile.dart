@@ -179,7 +179,11 @@ class TaskTile extends StatelessWidget {
                     ),
                   ],
                   PopupMenuButton<_TaskTileAction>(
-                    tooltip: 'More actions for ${task.title}',
+                    tooltip:
+                        onAssignGoal != null ||
+                            onRemoveFromGoal != null
+                        ? 'Goal actions for ${task.title}'
+                        : 'Task actions for ${task.title}',
                     onSelected: (action) {
                       switch (action) {
                         case _TaskTileAction.edit:

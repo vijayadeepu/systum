@@ -51,8 +51,8 @@ void main() {
     expect(find.text('Parent task'), findsOneWidget);
     expect(find.text('Child task'), findsOneWidget);
     expect(find.text('1 subtask'), findsOneWidget);
-    expect(find.byTooltip('Add subtask to Parent task'), findsOneWidget);
-    expect(find.byTooltip('Add subtask to Child task'), findsNothing);
+    expect(find.byTooltip('Goal actions for Parent task'), findsOneWidget);
+    expect(find.byTooltip('Task actions for Child task'), findsOneWidget);
   });
 
   testWidgets('adding a subtask persists it under the parent', (tester) async {
@@ -60,7 +60,9 @@ void main() {
     await repository.insert(_task(id: 'parent', title: 'Parent task'));
     await pumpTaskList(tester);
 
-    await tester.tap(find.byTooltip('Add subtask to Parent task'));
+    await tester.tap(find.byTooltip('Goal actions for Parent task'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Add subtask'));
     await tester.pumpAndSettle();
 
     expect(find.text('Add Subtask'), findsOneWidget);
@@ -108,7 +110,9 @@ void main() {
     );
     await pumpTaskList(tester);
 
-    await tester.tap(find.byTooltip('Delete Child task'));
+    await tester.tap(find.byTooltip('Task actions for Child task'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Delete task'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Delete'));
     await tester.pumpAndSettle();
@@ -130,7 +134,9 @@ void main() {
     );
     await pumpTaskList(tester);
 
-    await tester.tap(find.byTooltip('Delete Parent task'));
+    await tester.tap(find.byTooltip('Goal actions for Parent task'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Delete task'));
     await tester.pumpAndSettle();
 
     expect(find.textContaining('will become standalone task'), findsOneWidget);

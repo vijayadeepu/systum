@@ -72,6 +72,11 @@ final class AppTheme {
           vertical: AppSpacing.sm,
         ),
       ),
+      canvasColor: AppColors.surface,
+      popupMenuTheme: const PopupMenuThemeData(
+        color: AppColors.surface,
+        textStyle: TextStyle(color: AppColors.textPrimary),
+      ),
       cardTheme: const CardThemeData(
         color: AppColors.surface,
         elevation: 0,
@@ -105,6 +110,11 @@ final class AppTheme {
         foregroundColor: Colors.white,
       ),
       cardTheme: base.cardTheme.copyWith(color: const Color(0xFF1F2937)),
+      canvasColor: const Color(0xFF1F2937),
+      popupMenuTheme: base.popupMenuTheme.copyWith(
+        color: const Color(0xFF1F2937),
+        textStyle: const TextStyle(color: Colors.white),
+      ),
     );
   }
 }

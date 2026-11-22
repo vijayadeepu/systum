@@ -35,7 +35,9 @@ void main() {
   }
 
   Future<void> openEditDialog(WidgetTester tester, String title) async {
-    await tester.tap(find.byTooltip('Edit $title'));
+    await tester.tap(find.byTooltip('Goal actions for $title'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Edit task'));
     await tester.pumpAndSettle();
   }
 
@@ -70,7 +72,7 @@ void main() {
           .text,
       'Existing description',
     );
-    expect(find.text('Due 2026-08-02'), findsNWidgets(2));
+    expect(find.text('Due 2026-08-02'), findsOneWidget);
     expect(
       tester
           .widget<DropdownButtonFormField<int>>(
@@ -106,7 +108,9 @@ void main() {
       '  Updated description  ',
     );
     await tester.tap(find.byTooltip('Clear due date'));
-    await tester.tap(find.byType(DropdownButtonFormField<int>));
+    final priorityField = find.byType(DropdownButtonFormField<int>);
+    await tester.ensureVisible(priorityField);
+    await tester.tap(priorityField);
     await tester.pumpAndSettle();
     await tester.tap(find.text('High').last);
     await tester.pumpAndSettle();
@@ -158,7 +162,9 @@ void main() {
     await repository.insert(_task(id: 'delete-cancel'));
     await pumpTaskList(tester);
 
-    await tester.tap(find.byTooltip('Delete Task delete-cancel'));
+    await tester.tap(find.byTooltip('Goal actions for Task delete-cancel'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Delete task'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Cancel'));
     await tester.pumpAndSettle();
@@ -174,7 +180,9 @@ void main() {
     await repository.insert(_task(id: 'delete-confirm'));
     await pumpTaskList(tester);
 
-    await tester.tap(find.byTooltip('Delete Task delete-confirm'));
+    await tester.tap(find.byTooltip('Goal actions for Task delete-confirm'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Delete task'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Delete'));
     await tester.pumpAndSettle();
@@ -205,7 +213,9 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byTooltip('Edit Task mutation-failure'));
+    await tester.tap(find.byTooltip('Goal actions for Task mutation-failure'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Edit task'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextFormField).first, 'Changed');
     await tester.tap(find.text('Save'));
@@ -218,7 +228,9 @@ void main() {
     ).hideCurrentSnackBar();
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byTooltip('Delete Task mutation-failure'));
+    await tester.tap(find.byTooltip('Goal actions for Task mutation-failure'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Delete task'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Delete'));
     await tester.pumpAndSettle();
@@ -328,7 +340,9 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byTooltip('Edit ${original.title}'));
+    await tester.tap(find.byTooltip('Goal actions for ${original.title}'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Edit task'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextFormField).first, 'Updated');
     await tester.tap(find.text('Save'));

@@ -16,7 +16,6 @@ import '../providers/countdown_provider.dart';
 import '../providers/recurrence_provider.dart';
 import '../providers/task_provider.dart';
 import '../widgets/create_task_dialog.dart';
-import '../widgets/import_tasks_dialog.dart';
 import '../widgets/task_delete_dialog.dart';
 import '../widgets/task_tile.dart';
 import 'daily_agenda_page.dart';
@@ -77,35 +76,20 @@ class TaskListPage extends ConsumerWidget {
                   ref.read(taskSearchIsActiveProvider.notifier).setActive(true),
               icon: const Icon(Icons.search_rounded),
             ),
-          IconButton(
-            tooltip: 'Import tasks from AI',
-            onPressed: () async {
-              final imported = await showImportTasksDialog(context);
-              if (imported == null || !context.mounted) return;
-              try {
-                for (final task in imported.tasks) {
-                  await ref.read(taskProvider.notifier).addTask(task);
-                }
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Imported ${imported.tasks.length} tasks')),
-                  );
-                }
-              } catch (error) {
-                if (context.mounted) {
-                  _showMutationError(context, 'Could not import tasks', error);
-                }
-              }
-            },
-            icon: const Icon(Icons.auto_awesome_rounded),
-          ),
-          TextButton.icon(
-            onPressed: () => _showSortBottomSheet(context, ref),
-            icon: const Icon(Icons.sort_rounded),
-            label: Text(
-              '${taskSortModeLabel(sort.mode)} ${taskSortOrderLabel(sort.order)}',
+          if (MediaQuery.sizeOf(context).width < 400)
+            IconButton(
+              tooltip: 'Sort tasks',
+              onPressed: () => _showSortBottomSheet(context, ref),
+              icon: const Icon(Icons.sort_rounded),
+            )
+          else
+            TextButton.icon(
+              onPressed: () => _showSortBottomSheet(context, ref),
+              icon: const Icon(Icons.sort_rounded),
+              label: Text(
+                '${taskSortModeLabel(sort.mode)} ${taskSortOrderLabel(sort.order)}',
+              ),
             ),
-          ),
         ],
       ),
       drawer: _buildDrawer(context, ref),
